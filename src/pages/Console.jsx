@@ -90,6 +90,19 @@ export default function Console() {
         called_at: new Date().toISOString()
       });
 
+      // Broadcast event for display screen audio
+      try {
+        localStorage.setItem('ticket_call_event', JSON.stringify({
+          ticketSeq: ticket.ticket_number,
+          queueName: queue.name,
+          timestamp: Date.now()
+        }));
+        // Clear after 1 second to allow re-triggering
+        setTimeout(() => localStorage.removeItem('ticket_call_event'), 1000);
+      } catch (e) {
+        console.error('Error broadcasting call event:', e);
+      }
+
       // Trigger SMS notification for 2 tickets before
       if (queue) {
         await base44.functions.invoke('notifyTwoBefore', {
