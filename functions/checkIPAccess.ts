@@ -19,15 +19,25 @@ export default async function checkIPAccess(context) {
     }
 
     // Check if client IP is in allowed list and active
+    // Trim and normalize IPs for comparison
+    const normalizedClientIP = clientIP?.trim();
+    
+    console.log('[checkIPAccess] Normalized client IP:', normalizedClientIP);
+    console.log('[checkIPAccess] Allowed IPs:', allowedIPs.map(ip => ({ 
+      ip: ip.ip_address, 
+      active: ip.is_active,
+      trimmed: ip.ip_address?.trim()
+    })));
+    
     const isAllowed = allowedIPs.some(
-      ip => ip.is_active && ip.ip_address === clientIP
+      ip => ip.is_active && ip.ip_address?.trim() === normalizedClientIP
     );
 
     console.log('[checkIPAccess] Access allowed:', isAllowed);
 
     return {
       allowed: isAllowed,
-      clientIP
+      clientIP: normalizedClientIP
     };
   } catch (error) {
     console.error('[checkIPAccess] Error:', error);
