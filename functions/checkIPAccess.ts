@@ -5,8 +5,8 @@ export default async function checkIPAccess(context) {
     const clientIP = params.clientIP;
     console.log('[checkIPAccess] Checking IP:', clientIP);
 
-    // Get all allowed IPs
-    const allowedIPs = await base44.entities.AllowedIP.list();
+    // Get all allowed IPs using asServiceRole
+    const allowedIPs = await base44.asServiceRole.entities.AllowedIP.list();
     console.log('[checkIPAccess] Found', allowedIPs.length, 'allowed IPs in database');
 
     // If no IPs configured, allow access
