@@ -241,11 +241,16 @@ export default function Kiosk() {
         join_club: joinClub
       });
       
-      await base44.functions.invoke('sendSms', {
-        phoneNumber: phoneNumber,
-        queueName: queue.name,
-        ticketSeq: newSeq
-      });
+      // Try to send SMS, but don't fail if it doesn't work
+      try {
+        await base44.functions.invoke('sendSms', {
+          phoneNumber: phoneNumber,
+          queueName: queue.name,
+          ticketSeq: newSeq
+        });
+      } catch (smsError) {
+        console.warn('SMS sending failed, but ticket was created:', smsError);
+      }
       
       setCurrentTicket(newTicket);
       setShowTicket(true);
