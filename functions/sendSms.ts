@@ -1,26 +1,42 @@
 export default async function sendSms(context) {
   const { phoneNumber, queueName, ticketSeq, messageOverride, msgId } = context.params;
 
-  // Normalize phone number (remove spaces, dashes, etc.)
-  const cleanPhone = phoneNumber.replace(/\D/g, '');
+  // Validation
+  if (!phoneNumber || !queueName || !ticketSeq) {
+    return {
+      ok: false,
+      error: "Missing required parameters: phoneNumber, queueName, ticketSeq"
+    };
+  }
+
+  // Check API key
+  const apiKey = process.env.SMS_PROXY_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      error: "SMS_PROXY_KEY not configured"
+    };
+  }
+
+  // Normalize phone number (digits only)
+  const normalizedPhone = String(phoneNumber).trim().replace(/[^\d]/g, '');
 
   // Build default message
-  const defaultMessage = `שוק העיר
-מחלקת ${queueName}
-מספר התור שלך: ${ticketSeq}
+  const defaultMessageText = 
+    'שוק העיר\n' +
+    `מחלקת ${queueName}\n` +
+    `מספר התור שלך: ${ticketSeq}\n\n` +
+    'אתה כעת יכול להמשיך בקניות בסניף, אנחנו כבר נשלח לך תזכורת כשהתור יתקרב.\n\n' +
+    'להצטרפות למועדון:\n' +
+    'https://s1c.me/shukhair_01';
 
-אתה כעת יכול להמשיך בקניות בסניף, אנחנו כבר נשלח לך תזכורת כשהתור יתקרב.
-
-להצטרפות למועדון:
-https://s1c.me/shukhair_01`;
-
-  const messageText = messageOverride || defaultMessage;
+  const messageText = messageOverride || defaultMessageText;
 
   // Create payload
   const payload = {
-    Cli: cleanPhone,
+    Cli: normalizedPhone,
     Text: messageText,
-    MsgId: msgId || `ticket_${ticketSeq}_${Date.now()}`
+    MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
   };
 
   try {
@@ -29,28 +45,45 @@ https://s1c.me/shukhair_01`;
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": process.env.SMS_PROXY_KEY
+        "X-API-Key": apiKey
       },
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-      throw new Error(`SMS server responded with status ${response.status}`);
+    // Parse response
+    const responseText = await response.text();
+    let proxyResponse;
+    
+    try {
+      proxyResponse = JSON.parse(responseText);
+    } catch {
+      proxyResponse = { raw: responseText };
     }
 
-    const result = await response.json();
+    console.log("SMS Proxy Response:", proxyResponse);
 
+    // Success
+    if (response.status === 200) {
+      return {
+        ok: true,
+        status: response.status,
+        proxyResponse
+      };
+    }
+
+    // Error from proxy
     return {
-      success: true,
-      message: "SMS נשלח בהצלחה",
-      data: result
+      ok: false,
+      error: `SMS Proxy error: HTTP ${response.status}`,
+      status: response.status,
+      proxyResponse
     };
+
   } catch (error) {
     console.error("Error sending SMS:", error);
     return {
-      success: false,
-      message: "שגיאה בשליחת SMS",
-      error: error.message
+      ok: false,
+      error: String(error)
     };
   }
 }
