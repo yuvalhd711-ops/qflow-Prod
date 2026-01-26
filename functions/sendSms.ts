@@ -10,7 +10,7 @@ export default async function sendSms(context) {
   }
 
   // Check API key
-  const apiKey = process.env.SMS_PROXY_KEY;
+  const apiKey = context.secrets?.SMS_PROXY_KEY;
   if (!apiKey) {
     return {
       ok: false,
