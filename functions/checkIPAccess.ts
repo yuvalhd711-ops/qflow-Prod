@@ -1,14 +1,9 @@
 export default async function checkIPAccess(context) {
-  const { base44 } = context;
+  const { base44, params } = context;
 
   try {
-    // Get client IP from request headers
-    const clientIP = context.request?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() 
-      || context.request?.headers?.['x-real-ip'] 
-      || context.request?.connection?.remoteAddress 
-      || 'unknown';
-
-    console.log('[checkIPAccess] Client IP:', clientIP);
+    const clientIP = params.clientIP;
+    console.log('[checkIPAccess] Checking IP:', clientIP);
 
     // Get all allowed IPs
     const allowedIPs = await base44.entities.AllowedIP.list();
@@ -36,10 +31,9 @@ export default async function checkIPAccess(context) {
     };
   } catch (error) {
     console.error('[checkIPAccess] Error:', error);
-    // On error, allow access (fail open)
     return {
-      allowed: true,
-      clientIP: 'error',
+      allowed: false,
+      clientIP: params?.clientIP || 'unknown',
       error: error.message
     };
   }

@@ -39,23 +39,36 @@ export default function Layout({ children, currentPageName }) {
 
   const checkAccess = async () => {
     try {
-      console.log("[Layout] Checking IP access...");
-      const { data } = await base44.functions.invoke('checkIPAccess', {});
+      console.log("[Layout] Fetching client IP...");
+      
+      // Get client IP from external service
+      let clientIP = 'unknown';
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        clientIP = ipData.ip;
+        console.log("[Layout] Client IP:", clientIP);
+      } catch (ipError) {
+        console.error("[Layout] Failed to get IP:", ipError);
+      }
+
+      setClientIP(clientIP);
+
+      // Check if IP is allowed
+      const { data } = await base44.functions.invoke('checkIPAccess', { clientIP });
       console.log("[Layout] IP check response:", data);
 
       if (!data.allowed) {
-        console.log("[Layout] Access BLOCKED for IP:", data.clientIP);
+        console.log("[Layout] Access BLOCKED for IP:", clientIP);
         setIpBlocked(true);
-        setClientIP(data.clientIP);
         return;
       }
 
-      console.log("[Layout] Access ALLOWED for IP:", data.clientIP);
+      console.log("[Layout] Access ALLOWED for IP:", clientIP);
       loadUser();
     } catch (error) {
       console.error("[Layout] Error checking IP access:", error);
       setIpBlocked(true);
-      setClientIP("שגיאה בבדיקת IP");
     }
   };
 
