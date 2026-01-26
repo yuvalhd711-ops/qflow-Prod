@@ -54,11 +54,25 @@ export default function Layout({ children, currentPageName }) {
 
       setClientIP(clientIP);
 
-      // Check if IP is allowed
-      const { data } = await base44.functions.invoke('checkIPAccess', { clientIP });
-      console.log("[Layout] IP check response:", data);
+      // Check if IP is allowed directly
+      const allowedIPs = await base44.entities.AllowedIP.list();
+      console.log("[Layout] Found allowed IPs:", allowedIPs);
 
-      if (!data.allowed) {
+      // If no IPs configured, allow access
+      if (allowedIPs.length === 0) {
+        console.log("[Layout] No IPs configured, allowing access");
+        loadUser();
+        return;
+      }
+
+      // Check if client IP is in allowed list and active
+      const isAllowed = allowedIPs.some(
+        ip => ip.is_active && ip.ip_address?.trim() === clientIP?.trim()
+      );
+
+      console.log("[Layout] Access allowed:", isAllowed);
+
+      if (!isAllowed) {
         console.log("[Layout] Access BLOCKED for IP:", clientIP);
         setIpBlocked(true);
         return;
