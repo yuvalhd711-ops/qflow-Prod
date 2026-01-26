@@ -2,8 +2,12 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
-import { Printer, ArrowRight, Home } from "lucide-react";
+import { Printer, ArrowRight, Home, Smartphone } from "lucide-react";
 
 export default function Kiosk() {
   const [branch, setBranch] = useState(null);
@@ -12,6 +16,10 @@ export default function Kiosk() {
   const [selectedQueue, setSelectedQueue] = useState(null);
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deliveryMethod, setDeliveryMethod] = useState(null); // 'print' or 'sms'
+  const [smsDialog, setSmsDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [joinClub, setJoinClub] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -56,26 +64,53 @@ export default function Kiosk() {
     setQueues(branchQueues);
   };
 
-  const handleQueueSelect = async (queue) => {
+  const handleQueueSelect = (queue) => {
     setSelectedQueue(queue);
+    // Don't create ticket yet, wait for delivery method selection
+  };
+
+  const handleDeliveryMethod = (method) => {
+    setDeliveryMethod(method);
+    if (method === 'sms') {
+      setSmsDialog(true);
+    } else if (method === 'print') {
+      createTicket(null);
+    }
+  };
+
+  const createTicket = async (phone) => {
     try {
       // Get next ticket number
-      const nextNumber = (queue.seq_counter || 0) + 1;
+      const nextNumber = (selectedQueue.seq_counter || 0) + 1;
 
       // Create ticket
       const newTicket = await base44.entities.Ticket.create({
         branch_id: branch.id,
-        queue_id: queue.id,
+        queue_id: selectedQueue.id,
         ticket_number: nextNumber,
-        state: "waiting"
+        state: "waiting",
+        customer_phone: phone || null,
+        join_club: joinClub,
+        source: "kiosk",
+        two_before_sms_sent: false
       });
 
       // Update queue counter
-      await base44.entities.Queue.update(queue.id, {
+      await base44.entities.Queue.update(selectedQueue.id, {
         seq_counter: nextNumber
       });
 
+      // If SMS method, send initial SMS
+      if (phone) {
+        await base44.functions.invoke('sendSms', {
+          phoneNumber: phone,
+          queueName: selectedQueue.name,
+          ticketSeq: nextNumber
+        });
+      }
+
       setTicket(newTicket);
+      setSmsDialog(false);
 
       // Auto reset after 10 seconds
       setTimeout(() => {
@@ -87,11 +122,23 @@ export default function Kiosk() {
     }
   };
 
+  const handleSmsSubmit = () => {
+    if (!phoneNumber.trim()) {
+      alert("נא להזין מספר טלפון");
+      return;
+    }
+    createTicket(phoneNumber);
+  };
+
   const handleReset = () => {
     setSelectedQueue(null);
     setTicket(null);
     setBranch(null);
     setQueues([]);
+    setDeliveryMethod(null);
+    setSmsDialog(false);
+    setPhoneNumber("");
+    setJoinClub(false);
   };
 
   const handlePrint = () => {
@@ -183,8 +230,58 @@ export default function Kiosk() {
             </motion.div>
           )}
 
+          {/* Delivery Method Selection */}
+          {!ticket && selectedQueue && !deliveryMethod && (
+            <motion.div
+              key="delivery"
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -100, opacity: 0 }}
+            >
+              <Card className="bg-white shadow-xl mb-6" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
+                  <CardTitle className="text-3xl text-center">איך תרצה לקבל את התור?</CardTitle>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => handleDeliveryMethod('print')}
+                        className="w-full h-48 text-2xl font-bold text-white shadow-lg flex flex-col gap-4"
+                        style={{ backgroundColor: '#41B649' }}
+                      >
+                        <Printer className="w-16 h-16" />
+                        🎟️ קבל כרטיס מודפס
+                      </Button>
+                    </motion.div>
+
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => handleDeliveryMethod('sms')}
+                        className="w-full h-48 text-2xl font-bold text-white shadow-lg flex flex-col gap-4"
+                        style={{ backgroundColor: '#E52521' }}
+                      >
+                        <Smartphone className="w-16 h-16" />
+                        📱 קבל תור ב-SMS
+                      </Button>
+                    </motion.div>
+                  </div>
+
+                  <Button
+                    onClick={() => setSelectedQueue(null)}
+                    variant="outline"
+                    size="lg"
+                    className="w-full mt-8 text-xl"
+                  >
+                    חזור לבחירת מחלקה
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Queue Selection */}
-          {!ticket && branch && queues.length > 0 && (
+          {!ticket && branch && queues.length > 0 && !selectedQueue && (
             <motion.div
               key="queues"
               initial={{ x: 100, opacity: 0 }}
@@ -264,6 +361,54 @@ export default function Kiosk() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* SMS Dialog */}
+        <Dialog open={smsDialog} onOpenChange={setSmsDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">📱 קבלת תור ב-SMS</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-lg">מספר טלפון נייד</Label>
+                <Input
+                  type="tel"
+                  dir="ltr"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="050-1234567"
+                  className="text-xl h-14 mt-2"
+                />
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <Checkbox
+                  id="joinClub"
+                  checked={joinClub}
+                  onCheckedChange={setJoinClub}
+                />
+                <Label htmlFor="joinClub" className="text-base cursor-pointer">
+                  רוצה להצטרף למועדון לקוחות ולקבל הטבות והנחות
+                </Label>
+              </div>
+            </div>
+            <DialogFooter className="gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setSmsDialog(false)}
+                className="text-lg"
+              >
+                ביטול
+              </Button>
+              <Button 
+                onClick={handleSmsSubmit}
+                style={{ backgroundColor: '#E52521' }}
+                className="text-white text-lg"
+              >
+                שלח לי תור ב-SMS
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

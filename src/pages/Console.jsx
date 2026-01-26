@@ -89,6 +89,14 @@ export default function Console() {
         state: "called",
         called_at: new Date().toISOString()
       });
+
+      // Trigger SMS notification for 2 tickets before
+      if (queue) {
+        await base44.functions.invoke('notifyTwoBefore', {
+          queueId: queue.id
+        });
+      }
+
       await loadData();
     } catch (error) {
       console.error("Error calling ticket:", error);
