@@ -403,14 +403,15 @@ export default function Admin() {
 
     setTestingSms(true);
     try {
-      const result = await base44.functions.invoke('sendSms', {
+      const response = await base44.functions.invoke('sendSms', {
         phoneNumber: testPhone,
         queueName: "בדיקה",
         ticketSeq: 999,
         messageOverride: "בדיקת SMS מ-QFLOW - שוק העיר"
       });
 
-      console.log("Test SMS Result:", result);
+      console.log("Test SMS Response:", response);
+      const result = response.data;
       
       if (result.ok) {
         alert("✅ SMS נשלח בהצלחה!\n\n" + JSON.stringify(result, null, 2));
