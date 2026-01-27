@@ -28,30 +28,29 @@ export default async function sendSms(context) {
       };
     }
 
-  // Normalize phone number (digits only)
-  const normalizedPhone = String(phoneNumber).trim().replace(/[^\d]/g, '');
+    // Normalize phone number (digits only)
+    const normalizedPhone = String(phoneNumber).trim().replace(/[^\d]/g, '');
 
-  // Build default message
-  const defaultMessageText = 
-    'שוק העיר\n' +
-    `מחלקת ${queueName}\n` +
-    `מספר התור שלך: ${ticketSeq}\n\n` +
-    'אתה כעת יכול להמשיך בקניות בסניף, אנחנו כבר נשלח לך תזכורת כשהתור יתקרב.\n\n' +
-    'להצטרפות למועדון:\n' +
-    'https://s1c.me/shukhair_01';
+    // Build default message
+    const defaultMessageText = 
+      'שוק העיר\n' +
+      `מחלקת ${queueName}\n` +
+      `מספר התור שלך: ${ticketSeq}\n\n` +
+      'אתה כעת יכול להמשיך בקניות בסניף, אנחנו כבר נשלח לך תזכורת כשהתור יתקרב.\n\n' +
+      'להצטרפות למועדון:\n' +
+      'https://s1c.me/shukhair_01';
 
-  const messageText = messageOverride || defaultMessageText;
+    const messageText = messageOverride || defaultMessageText;
 
-  // Create payload
-  const payload = {
-    Cli: normalizedPhone,
-    Text: messageText,
-    MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
-  };
+    // Create payload
+    const payload = {
+      Cli: normalizedPhone,
+      Text: messageText,
+      MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
+    };
 
-  console.log("Sending SMS with payload:", { Cli: payload.Cli, MsgId: payload.MsgId, TextLength: payload.Text.length });
-  
-  try {
+    console.log("Sending SMS with payload:", { Cli: payload.Cli, MsgId: payload.MsgId, TextLength: payload.Text.length });
+    
     // Send to SMS proxy server
     const response = await fetch("http://84.110.65.94:2000/send-sms", {
       method: "POST",
@@ -104,16 +103,6 @@ export default async function sendSms(context) {
         message: error.message,
         stack: error.stack
       }
-    };
-  }
-}
-
-  } catch (topLevelError) {
-    console.error("=== Top Level Function Error ===");
-    console.error("Error:", topLevelError);
-    return {
-      ok: false,
-      error: "Top level error: " + String(topLevelError)
     };
   }
 }
