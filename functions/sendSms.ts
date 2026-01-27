@@ -1,25 +1,32 @@
 export default async function sendSms(context) {
-  const { phoneNumber, queueName, ticketSeq, messageOverride, msgId } = context.params;
+  try {
+    console.log("=== sendSms function started ===");
+    console.log("context.params:", JSON.stringify(context.params));
+    console.log("context.secrets available:", Object.keys(context.secrets || {}));
+    
+    const { phoneNumber, queueName, ticketSeq, messageOverride, msgId } = context.params;
 
-  // Validation
-  if (!phoneNumber || !queueName || !ticketSeq) {
-    return {
-      ok: false,
-      error: "Missing required parameters: phoneNumber, queueName, ticketSeq"
-    };
-  }
+    // Validation
+    if (!phoneNumber || !queueName || !ticketSeq) {
+      console.log("ERROR: Missing parameters");
+      return {
+        ok: false,
+        error: "Missing required parameters: phoneNumber, queueName, ticketSeq"
+      };
+    }
 
-  // Check API key
-  const apiKey = context.secrets?.SMS_PROXY_KEY;
-  console.log("SMS_PROXY_KEY exists:", !!apiKey);
-  console.log("API Key length:", apiKey?.length);
-  
-  if (!apiKey) {
-    return {
-      ok: false,
-      error: "SMS_PROXY_KEY not configured"
-    };
-  }
+    // Check API key
+    const apiKey = context.secrets?.SMS_PROXY_KEY;
+    console.log("SMS_PROXY_KEY exists:", !!apiKey);
+    console.log("SMS_PROXY_KEY value:", apiKey);
+    
+    if (!apiKey) {
+      console.log("ERROR: SMS_PROXY_KEY not found in secrets");
+      return {
+        ok: false,
+        error: "SMS_PROXY_KEY not configured in secrets"
+      };
+    }
 
   // Normalize phone number (digits only)
   const normalizedPhone = String(phoneNumber).trim().replace(/[^\d]/g, '');
@@ -86,10 +93,27 @@ export default async function sendSms(context) {
     };
 
   } catch (error) {
-    console.error("Error sending SMS:", error);
+    console.error("=== SMS Function Error ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("Full error:", error);
     return {
       ok: false,
-      error: String(error)
+      error: String(error),
+      errorDetails: {
+        message: error.message,
+        stack: error.stack
+      }
+    };
+  }
+}
+
+  } catch (topLevelError) {
+    console.error("=== Top Level Function Error ===");
+    console.error("Error:", topLevelError);
+    return {
+      ok: false,
+      error: "Top level error: " + String(topLevelError)
     };
   }
 }
