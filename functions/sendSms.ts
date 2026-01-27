@@ -1,31 +1,44 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  console.log("=== sendSms START ===");
+  console.log("=== SMS Function Called ===");
   
+  let body;
   try {
-    const base44 = createClientFromRequest(req);
-    const body = await req.json();
-    
-    console.log("Body received:", body);
-    
-    const { phoneNumber, queueName, ticketSeq, messageOverride } = body;
+    body = await req.json();
+    console.log("Request body:", JSON.stringify(body));
+  } catch (e) {
+    console.error("Failed to parse body:", e);
+    return new Response(JSON.stringify({ ok: false, error: "Invalid JSON" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 
-    if (!phoneNumber || !queueName || !ticketSeq) {
-      return Response.json({ ok: false, error: "Missing params" }, { status: 400 });
-    }
+  const { phoneNumber, queueName, ticketSeq, messageOverride } = body;
 
-    const apiKey = Deno.env.get("SMS_PROXY_KEY");
-    console.log("API Key found:", !!apiKey);
-    
-    if (!apiKey) {
-      return Response.json({ ok: false, error: "SMS_PROXY_KEY missing" }, { status: 500 });
-    }
+  if (!phoneNumber) {
+    return new Response(JSON.stringify({ ok: false, error: "Missing phoneNumber" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 
+  const apiKey = Deno.env.get("SMS_PROXY_KEY");
+  console.log("API Key exists:", !!apiKey);
+  
+  if (!apiKey) {
+    return new Response(JSON.stringify({ ok: false, error: "SMS_PROXY_KEY not set" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  try {
     const phone = String(phoneNumber).replace(/[^\d]/g, '');
-    const message = messageOverride || `שוק העיר\nמחלקת ${queueName}\nמספר התור שלך: ${ticketSeq}`;
+    const message = messageOverride || `שוק העיר\nמחלקת ${queueName}\nמספר: ${ticketSeq}`;
 
-    console.log("Sending to:", phone);
+    console.log("Calling SMS proxy for:", phone);
     
     const smsResponse = await fetch("http://84.110.65.94:2000/send-sms", {
       method: "POST",
@@ -36,21 +49,27 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         Cli: phone,
         Text: message,
-        MsgId: `kiosk_${Date.now()}`
+        MsgId: `qflow_${Date.now()}`
       })
     });
 
-    const responseText = await smsResponse.text();
-    console.log("SMS Server response:", responseText);
+    const text = await smsResponse.text();
+    console.log("SMS proxy returned:", text);
 
-    return Response.json({
-      ok: smsResponse.status === 200,
+    return new Response(JSON.stringify({
+      ok: smsResponse.ok,
       status: smsResponse.status,
-      response: responseText
+      response: text
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
     });
 
   } catch (error) {
-    console.error("ERROR:", error.message);
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error("Fetch error:", error);
+    return new Response(JSON.stringify({ ok: false, error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 });
