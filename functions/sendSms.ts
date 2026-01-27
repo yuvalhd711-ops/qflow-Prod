@@ -12,6 +12,7 @@ export default async function sendSms(context) {
   // Check API key
   const apiKey = context.secrets?.SMS_PROXY_KEY;
   console.log("SMS_PROXY_KEY exists:", !!apiKey);
+  console.log("API Key length:", apiKey?.length);
   
   if (!apiKey) {
     return {
@@ -41,6 +42,8 @@ export default async function sendSms(context) {
     MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
   };
 
+  console.log("Sending SMS with payload:", { Cli: payload.Cli, MsgId: payload.MsgId, TextLength: payload.Text.length });
+  
   try {
     // Send to SMS proxy server
     const response = await fetch("http://84.110.65.94:2000/send-sms", {
@@ -62,6 +65,7 @@ export default async function sendSms(context) {
       proxyResponse = { raw: responseText };
     }
 
+    console.log("SMS Proxy HTTP Status:", response.status);
     console.log("SMS Proxy Response:", proxyResponse);
 
     // Success
