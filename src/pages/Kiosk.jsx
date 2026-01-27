@@ -272,7 +272,6 @@ export default function Kiosk() {
       setSmsDialog(false);
       setPhoneNumber("");
       setJoinClub(false);
-      setSendingSms(false);
       
       setTimeout(() => {
         setShowTicket(false);
@@ -283,8 +282,9 @@ export default function Kiosk() {
     } catch (error) {
       console.error("[SMS] Error creating SMS ticket:", error);
       alert("שגיאה ביצירת תור: " + error.message);
-      localStorage.removeItem(lockKey);
+    } finally {
       setSendingSms(false);
+      localStorage.removeItem(lockKey);
     }
   };
 
