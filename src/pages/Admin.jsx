@@ -46,6 +46,9 @@ export default function Admin() {
 
   const [runningBackfill, setRunningBackfill] = useState(false);
   const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+  const [testingSms, setTestingSms] = useState(false);
+  const [testPhone, setTestPhone] = useState("");
+  const [showSmsTestDialog, setShowSmsTestDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -392,6 +395,38 @@ export default function Admin() {
     }
   };
 
+  const testSms = async () => {
+    if (!testPhone.trim()) {
+      alert("יש להזין מספר טלפון");
+      return;
+    }
+
+    setTestingSms(true);
+    try {
+      const result = await base44.functions.invoke('sendSms', {
+        phoneNumber: testPhone,
+        queueName: "בדיקה",
+        ticketSeq: 999,
+        messageOverride: "בדיקת SMS מ-QFLOW - שוק העיר"
+      });
+
+      console.log("Test SMS Result:", result);
+      
+      if (result.ok) {
+        alert("✅ SMS נשלח בהצלחה!\n\n" + JSON.stringify(result, null, 2));
+      } else {
+        alert("❌ שגיאה בשליחת SMS:\n\n" + (result.error || JSON.stringify(result, null, 2)));
+      }
+    } catch (error) {
+      console.error("Test SMS error:", error);
+      alert("❌ שגיאה:\n\n" + String(error));
+    } finally {
+      setTestingSms(false);
+      setShowSmsTestDialog(false);
+      setTestPhone("");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E6F9EA' }}>
@@ -417,6 +452,13 @@ export default function Admin() {
             <p className="text-gray-700">ניהול סניפים, מחלקות ואנשי קשר</p>
           </div>
           <div className="flex gap-3">
+            <Button
+              onClick={() => setShowSmsTestDialog(true)}
+              className="text-white"
+              style={{ backgroundColor: '#E52521' }}
+            >
+              📱 בדיקת SMS
+            </Button>
             <Button
               onClick={runBackfill}
               disabled={runningBackfill}
@@ -788,6 +830,43 @@ export default function Admin() {
               </Button>
               <Button onClick={createIP} style={{ backgroundColor: '#41B649' }} className="text-white">
                 הוסף
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* SMS Test Dialog */}
+        <Dialog open={showSmsTestDialog} onOpenChange={setShowSmsTestDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>בדיקת שליחת SMS</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>מספר טלפון לבדיקה</Label>
+                <Input
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  placeholder="05XXXXXXXX"
+                  dir="ltr"
+                />
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                <p className="font-medium mb-1">⚠️ הודעת הבדיקה:</p>
+                <p className="text-gray-700">בדיקת SMS מ-QFLOW - שוק העיר</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSmsTestDialog(false)}>
+                ביטול
+              </Button>
+              <Button 
+                onClick={testSms} 
+                disabled={testingSms}
+                style={{ backgroundColor: '#E52521' }} 
+                className="text-white"
+              >
+                {testingSms ? "שולח..." : "📱 שלח SMS"}
               </Button>
             </DialogFooter>
           </DialogContent>
