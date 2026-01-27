@@ -20,6 +20,7 @@ export default function Kiosk() {
   const [smsDialog, setSmsDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [joinClub, setJoinClub] = useState(false);
+  const [sendingSms, setSendingSms] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
@@ -208,29 +209,38 @@ export default function Kiosk() {
 
   // Handle SMS ticket
   const handleSmsTicket = async () => {
+    console.log("[SMS] Button clicked - starting flow");
+    
     if (!phoneNumber || !queue_id) {
       alert("נא למלא את כל השדות");
       return;
     }
+    
+    console.log("[SMS] Validation passed, phone:", phoneNumber);
     
     const lockKey = `ticket_creation_${queue_id}`;
     const now = Date.now();
     const existingLock = localStorage.getItem(lockKey);
     
     if (existingLock && (now - parseInt(existingLock)) < 3000) {
+      console.log("[SMS] Blocked by lock");
       return;
     }
     
+    setSendingSms(true);
     localStorage.setItem(lockKey, String(now));
     
     try {
+      console.log("[SMS] Getting queue...");
       const currentQueue = await base44.entities.Queue.get(queue_id);
       const newSeq = (currentQueue.seq_counter || 0) + 1;
       
+      console.log("[SMS] Updating queue counter to:", newSeq);
       await base44.entities.Queue.update(queue_id, {
         seq_counter: newSeq
       });
       
+      console.log("[SMS] Creating ticket...");
       const newTicket = await base44.entities.Ticket.create({
         branch_id: currentBranch.id,
         queue_id: queue_id,
@@ -241,22 +251,28 @@ export default function Kiosk() {
         join_club: joinClub
       });
       
+      console.log("[SMS] Ticket created:", newTicket.id);
+      
       // Try to send SMS, but don't fail if it doesn't work
       try {
-        await base44.functions.invoke('sendSms', {
+        console.log("[SMS] Sending SMS...");
+        const smsResult = await base44.functions.invoke('sendSms', {
           phoneNumber: phoneNumber,
           queueName: queue.name,
           ticketSeq: newSeq
         });
+        console.log("[SMS] SMS result:", smsResult);
       } catch (smsError) {
-        console.warn('SMS sending failed, but ticket was created:', smsError);
+        console.warn('[SMS] SMS sending failed, but ticket was created:', smsError);
       }
       
+      console.log("[SMS] Showing success screen");
       setCurrentTicket(newTicket);
       setShowTicket(true);
       setSmsDialog(false);
       setPhoneNumber("");
       setJoinClub(false);
+      setSendingSms(false);
       
       setTimeout(() => {
         setShowTicket(false);
@@ -265,9 +281,10 @@ export default function Kiosk() {
       }, 5000);
       
     } catch (error) {
-      console.error("Error creating SMS ticket:", error);
-      alert("שגיאה ביצירת תור");
+      console.error("[SMS] Error creating SMS ticket:", error);
+      alert("שגיאה ביצירת תור: " + error.message);
       localStorage.removeItem(lockKey);
+      setSendingSms(false);
     }
   };
 
@@ -506,16 +523,25 @@ export default function Kiosk() {
               <Button
                 variant="outline"
                 onClick={() => setSmsDialog(false)}
+                disabled={sendingSms}
                 style={{ borderColor: '#E52521', color: '#E52521' }}
               >
                 ביטול
               </Button>
               <Button
                 onClick={handleSmsTicket}
+                disabled={sendingSms}
                 className="text-white"
                 style={{ backgroundColor: '#41B649' }}
               >
-                שלח לי תור ב-SMS
+                {sendingSms ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>שולח...</span>
+                  </div>
+                ) : (
+                  "שלח לי תור ב-SMS"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
