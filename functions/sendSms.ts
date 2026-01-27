@@ -1,31 +1,37 @@
-export default async function sendSms(context) {
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
   try {
     console.log("=== sendSms function started ===");
-    console.log("context.params:", JSON.stringify(context.params));
-    console.log("context.secrets available:", Object.keys(context.secrets || {}));
     
-    const { phoneNumber, queueName, ticketSeq, messageOverride, msgId } = context.params;
+    const base44 = createClientFromRequest(req);
+    
+    // Get parameters from request body
+    const body = await req.json();
+    const { phoneNumber, queueName, ticketSeq, messageOverride, msgId } = body;
+
+    console.log("Received params:", { phoneNumber, queueName, ticketSeq });
 
     // Validation
     if (!phoneNumber || !queueName || !ticketSeq) {
       console.log("ERROR: Missing parameters");
-      return {
+      return Response.json({
         ok: false,
         error: "Missing required parameters: phoneNumber, queueName, ticketSeq"
-      };
+      }, { status: 400 });
     }
 
-    // Check API key
-    const apiKey = context.secrets?.SMS_PROXY_KEY;
+    // Get API key from environment
+    const apiKey = Deno.env.get("SMS_PROXY_KEY");
     console.log("SMS_PROXY_KEY exists:", !!apiKey);
     console.log("SMS_PROXY_KEY value:", apiKey);
     
     if (!apiKey) {
-      console.log("ERROR: SMS_PROXY_KEY not found in secrets");
-      return {
+      console.log("ERROR: SMS_PROXY_KEY not found");
+      return Response.json({
         ok: false,
         error: "SMS_PROXY_KEY not configured in secrets"
-      };
+      }, { status: 500 });
     }
 
     // Normalize phone number (digits only)
@@ -49,7 +55,11 @@ export default async function sendSms(context) {
       MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
     };
 
-    console.log("Sending SMS with payload:", { Cli: payload.Cli, MsgId: payload.MsgId, TextLength: payload.Text.length });
+    console.log("Sending SMS with payload:", { 
+      Cli: payload.Cli, 
+      MsgId: payload.MsgId, 
+      TextLength: payload.Text.length 
+    });
     
     // Send to SMS proxy server
     const response = await fetch("http://84.110.65.94:2000/send-sms", {
@@ -74,35 +84,35 @@ export default async function sendSms(context) {
     console.log("SMS Proxy HTTP Status:", response.status);
     console.log("SMS Proxy Response:", proxyResponse);
 
-    // Success
+    // Return result
     if (response.status === 200) {
-      return {
+      return Response.json({
         ok: true,
         status: response.status,
         proxyResponse
-      };
+      });
     }
 
     // Error from proxy
-    return {
+    return Response.json({
       ok: false,
       error: `SMS Proxy error: HTTP ${response.status}`,
       status: response.status,
       proxyResponse
-    };
+    }, { status: response.status });
 
   } catch (error) {
     console.error("=== SMS Function Error ===");
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
-    console.error("Full error:", error);
-    return {
+    
+    return Response.json({
       ok: false,
       error: String(error),
       errorDetails: {
         message: error.message,
         stack: error.stack
       }
-    };
+    }, { status: 500 });
   }
-}
+});
