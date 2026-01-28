@@ -180,7 +180,7 @@ export default function Console() {
       
       broadcastTicketCall(nextTicket, queue.name);
       
-      base44.functions.invoke('notifyTwoBefore', { queueId: queue_id }).catch(err => {
+      base44.functions.invoke('notifyTwoBefore', { queue_id: queue_id }).catch(err => {
         console.warn('notifyTwoBefore failed:', err);
       });
       
