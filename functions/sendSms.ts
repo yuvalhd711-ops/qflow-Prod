@@ -1,5 +1,6 @@
 Deno.serve(async (req) => {
   console.log("[sendSms] Function invoked");
+  let timeout;
   try {
     const body = await req.json();
     console.log("[sendSms] Body parsed:", { phone: body.phoneNumber, queue: body.queueName, seq: body.ticketSeq });
@@ -11,7 +12,10 @@ Deno.serve(async (req) => {
     console.log("[sendSms] Calling proxy with phone:", phone);
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    timeout = setTimeout(() => {
+      console.log("[sendSms] Timeout reached, aborting...");
+      controller.abort();
+    }, 5000);
     
     const r = await fetch("http://84.110.65.94:2000/send-sms", {
       method: "POST",
@@ -33,10 +37,26 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" } 
     });
   } catch (e) {
-    console.error("[sendSms] Error:", e);
+    if (timeout) clearTimeout(timeout);
+    
+    // Handle AbortError specifically
+    if (e.name === 'AbortError') {
+      console.error("[sendSms] Request aborted (timeout)");
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "SMS_TIMEOUT",
+        message: "שליחת SMS נכשלה - זמן תגובה ארוך מדי"
+      }), { 
+        status: 200, 
+        headers: { "Content-Type": "application/json" } 
+      });
+    }
+    
+    console.error("[sendSms] Error:", e.name, e.message);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: String(e) 
+      error: e.name || "UNKNOWN_ERROR",
+      message: e.message || String(e)
     }), { 
       status: 200, 
       headers: { "Content-Type": "application/json" } 
