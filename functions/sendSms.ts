@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     console.log("[sendSms] Calling proxy with phone:", phone);
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
     
     const r = await fetch("http://84.110.65.94:2000/send-sms", {
       method: "POST",
