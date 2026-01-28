@@ -66,22 +66,22 @@ Deno.serve(async (req) => {
 
     if (response.status === 200) {
       return Response.json({
-        ok: true,
+        success: true,
         status: response.status,
-        proxyResponse
+        data: responseText
       }, { status: 200 });
     }
 
     return Response.json({
-      ok: false,
+      success: false,
       error: `SMS Proxy error: HTTP ${response.status}`,
       status: response.status,
-      proxyResponse
+      data: responseText
     }, { status: 200 });
 
   } catch (error) {
     return Response.json(
-      { ok: false, error: String(error) },
+      { success: false, error: String(error) },
       { status: 200 }
     );
   }
