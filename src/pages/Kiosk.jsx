@@ -425,64 +425,98 @@ export default function Kiosk() {
   // Ticket creation screen
   if (queue_id && queue) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8" 
+      <div className="min-h-screen p-8" 
            dir="rtl" 
            style={{ backgroundColor: '#E6F9EA' }}>
         
-        <div className="text-center mb-12">
-          <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
-            alt="שוק העיר"
-            className="h-20 w-auto mx-auto mb-6"
-          />
-          <h1 className="text-6xl font-bold mb-2" style={{ color: '#1F5F25' }}>
-            {queue.name}
-          </h1>
-          <p className="text-2xl text-gray-700">מחכים לך!</p>
+        {/* Back button - top right */}
+        <div className="max-w-7xl mx-auto mb-4">
+          <Button
+            onClick={() => window.location.href = createPageUrl("Kiosk") + `?branch_id=${branch_id}`}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            style={{ borderColor: '#41B649', color: '#41B649' }}
+          >
+            ← חזרה לבחירת מחלקה
+          </Button>
         </div>
         
-        <div className="grid gap-6 w-full max-w-2xl">
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Button
-              onClick={handlePrint}
-              className="w-full h-48 text-white shadow-2xl"
-              style={{ backgroundColor: '#E52521', borderRadius: '1.5rem' }}
-            >
-              <div className="flex flex-col items-center gap-4">
-                <div className="text-7xl">🎟️</div>
-                <div className="text-4xl font-bold">קבל כרטיס מודפס</div>
-                <div className="text-lg font-normal">
-                  לחץ כאן לקבלת כרטיס מודפס עם מספר התור שלך
-                </div>
-              </div>
-            </Button>
-          </motion.div>
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)' }}>
+          {/* Logo and Title */}
+          <div className="text-center mb-16">
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
+              alt="שוק העיר"
+              className="h-24 w-auto mx-auto mb-8"
+            />
+            <h1 className="text-7xl font-bold mb-4" style={{ color: '#1F5F25' }}>
+              {queue.name}
+            </h1>
+            <p className="text-2xl text-gray-600">בחר אפשרות לקבלת מספר תור</p>
+          </div>
           
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Button
-              onClick={() => setSmsDialog(true)}
-              className="w-full h-48 text-white shadow-2xl"
-              style={{ backgroundColor: '#41B649', borderRadius: '1.5rem' }}
+          {/* Two cards - horizontal layout */}
+          <div className="grid md:grid-cols-2 gap-8 w-full max-w-5xl px-4">
+            {/* Red card - Print ticket */}
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              whileTap={{ scale: 0.98 }}
+              className="cursor-pointer"
+              onClick={handlePrint}
             >
-              <div className="flex flex-col items-center gap-4">
-                <div className="text-7xl">📱</div>
-                <div className="text-4xl font-bold">קבל תור ב-SMS</div>
-                <div className="text-lg font-normal">
-                  קבל את מספר התור לנייד והמשך לקניות
+              <div 
+                className="relative h-80 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8"
+                style={{ backgroundColor: '#E52521' }}
+              >
+                {/* Logo circle */}
+                <div className="absolute top-8 bg-white rounded-full p-6 shadow-lg">
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
+                    alt="שוק העיר"
+                    className="h-16 w-auto"
+                  />
+                </div>
+                
+                {/* Text */}
+                <div className="mt-auto text-center">
+                  <h2 className="text-5xl font-bold text-white">
+                    קבלת מספר
+                  </h2>
                 </div>
               </div>
-            </Button>
-          </motion.div>
+            </motion.div>
+            
+            {/* Green card - SMS ticket */}
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              whileTap={{ scale: 0.98 }}
+              className="cursor-pointer"
+              onClick={() => setSmsDialog(true)}
+            >
+              <div 
+                className="relative h-80 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8"
+                style={{ backgroundColor: '#1F5F25' }}
+              >
+                {/* Logo circle */}
+                <div className="absolute top-8 bg-white rounded-full p-6 shadow-lg">
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
+                    alt="שוק העיר"
+                    className="h-16 w-auto"
+                  />
+                </div>
+                
+                {/* Text */}
+                <div className="mt-auto text-center">
+                  <h2 className="text-5xl font-bold text-white">
+                    קבלת מספר ב-SMS
+                  </h2>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
-        
-        <Button
-          onClick={() => window.location.href = createPageUrl("Kiosk") + `?branch_id=${branch_id}`}
-          variant="outline"
-          className="mt-8 gap-2"
-          style={{ borderColor: '#41B649', color: '#41B649' }}
-        >
-          ← חזרה למחלקות
-        </Button>
 
         {/* SMS Dialog */}
         <Dialog open={smsDialog} onOpenChange={setSmsDialog}>
