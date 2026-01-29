@@ -672,49 +672,6 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* IP Dialog */}
-        <Dialog open={showIpDialog} onOpenChange={setShowIpDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>כתובת IP חדשה</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>כתובת IP</Label>
-                <Input
-                  value={ipForm.ip_address}
-                  onChange={(e) => setIpForm({ ...ipForm, ip_address: e.target.value })}
-                  placeholder="לדוגמה: 192.168.1.100"
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <Label>תיאור (אופציונלי)</Label>
-                <Input
-                  value={ipForm.description}
-                  onChange={(e) => setIpForm({ ...ipForm, description: e.target.value })}
-                  placeholder="לדוגמה: משרד ראשי"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={ipForm.is_active}
-                  onCheckedChange={(checked) => setIpForm({ ...ipForm, is_active: checked })}
-                />
-                <Label>כתובת פעילה</Label>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowIpDialog(false)}>
-                ביטול
-              </Button>
-              <Button onClick={createIP} style={{ backgroundColor: '#41B649' }} className="text-white">
-                הוסף
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         {/* SMS Test Dialog */}
         <Dialog open={showSmsTestDialog} onOpenChange={setShowSmsTestDialog}>
           <DialogContent>
