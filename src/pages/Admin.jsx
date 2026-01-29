@@ -36,12 +36,6 @@ export default function Admin() {
     is_active: true
   });
 
-  const [ipForm, setIpForm] = useState({
-    ip_address: "",
-    description: "",
-    is_active: true
-  });
-
   const [runningBackfill, setRunningBackfill] = useState(false);
   const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
   const [testingSms, setTestingSms] = useState(false);
