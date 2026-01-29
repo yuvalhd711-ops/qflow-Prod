@@ -48,16 +48,14 @@ export default function Admin() {
 
   const loadData = async () => {
     try {
-      const [branchesData, settingsData, contactsData, ipsData] = await Promise.all([
+      const [branchesData, settingsData, contactsData] = await Promise.all([
         base44.entities.Branch.list(),
         base44.entities.BranchDepartmentSetting.list(),
-        base44.entities.BranchContact.list(),
-        base44.entities.AllowedIP.list()
+        base44.entities.BranchContact.list()
       ]);
 
       setBranches(branchesData);
       setContacts(contactsData);
-      setAllowedIPs(ipsData);
 
       // Organize settings by branch
       const settingsByBranch = {};
