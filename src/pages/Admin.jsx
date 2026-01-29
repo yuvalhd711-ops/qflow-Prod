@@ -228,51 +228,6 @@ export default function Admin() {
     }
   };
 
-  const createIP = async () => {
-    if (!ipForm.ip_address.trim()) {
-      alert("יש להזין כתובת IP");
-      return;
-    }
-
-    try {
-      await base44.entities.AllowedIP.create(ipForm);
-      setShowIpDialog(false);
-      setIpForm({ ip_address: "", description: "", is_active: true });
-      await loadData();
-      alert("כתובת IP נוספה בהצלחה");
-    } catch (error) {
-      console.error("Error creating IP:", error);
-      alert("שגיאה בהוספת כתובת IP");
-    }
-  };
-
-  const toggleIPStatus = async (ip) => {
-    try {
-      await base44.entities.AllowedIP.update(ip.id, {
-        is_active: !ip.is_active
-      });
-      await loadData();
-    } catch (error) {
-      console.error("Error updating IP:", error);
-      alert("שגיאה בעדכון הסטטוס");
-    }
-  };
-
-  const deleteIP = async (ip) => {
-    if (!confirm(`האם למחוק את כתובת ה-IP ${ip.ip_address}?`)) {
-      return;
-    }
-
-    try {
-      await base44.entities.AllowedIP.delete(ip.id);
-      await loadData();
-      alert("כתובת IP נמחקה בהצלחה");
-    } catch (error) {
-      console.error("Error deleting IP:", error);
-      alert("שגיאה במחיקת כתובת IP");
-    }
-  };
-
   const runBackfill = async () => {
     if (!confirm("האם להריץ תיקון תורים? פעולה זו תיצור הגדרות ותורים חסרים.")) {
       return;
