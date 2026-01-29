@@ -567,69 +567,7 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="ips">
-            <div className="flex justify-end mb-4">
-              <Button
-                onClick={() => setShowIpDialog(true)}
-                className="text-white"
-                style={{ backgroundColor: '#E52521' }}
-              >
-                <Plus className="w-4 h-4 ml-2" />
-                כתובת IP חדשה
-              </Button>
-            </div>
 
-            <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-              <CardContent className="p-6">
-                {allowedIPs.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Shield className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                    <p>אין כתובות IP מוגדרות</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>כתובת IP</TableHead>
-                        <TableHead>תיאור</TableHead>
-                        <TableHead>סטטוס</TableHead>
-                        <TableHead>פעולות</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allowedIPs.map((ip) => (
-                        <TableRow key={ip.id}>
-                          <TableCell className="font-mono font-bold">{ip.ip_address}</TableCell>
-                          <TableCell>{ip.description || "-"}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={ip.is_active}
-                                onCheckedChange={() => toggleIPStatus(ip)}
-                              />
-                              <Badge variant={ip.is_active ? "default" : "secondary"} style={ip.is_active ? { backgroundColor: '#41B649' } : {}}>
-                                {ip.is_active ? "פעיל" : "לא פעיל"}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteIP(ip)}
-                              style={{ backgroundColor: '#E52521' }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Branch Dialog */}
