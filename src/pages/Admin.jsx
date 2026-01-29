@@ -427,7 +427,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="branches" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="branches" className="data-[state=active]:bg-green-50 data-[state=active]:text-green-900">
               <Building2 className="w-4 h-4 ml-2" />
               סניפים ומחלקות
@@ -435,10 +435,6 @@ export default function Admin() {
             <TabsTrigger value="contacts" className="data-[state=active]:bg-green-50 data-[state=active]:text-green-900">
               <Phone className="w-4 h-4 ml-2" />
               התראות SMS
-            </TabsTrigger>
-            <TabsTrigger value="ips" className="data-[state=active]:bg-green-50 data-[state=active]:text-green-900">
-              <Shield className="w-4 h-4 ml-2" />
-              🔒 הלבנת IP
             </TabsTrigger>
           </TabsList>
 
