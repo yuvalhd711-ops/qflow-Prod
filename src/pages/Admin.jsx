@@ -19,11 +19,9 @@ export default function Admin() {
   const [branches, setBranches] = useState([]);
   const [branchSettings, setBranchSettings] = useState({});
   const [contacts, setContacts] = useState([]);
-  const [allowedIPs, setAllowedIPs] = useState([]);
   
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
-  const [showIpDialog, setShowIpDialog] = useState(false);
   
   const [branchForm, setBranchForm] = useState({
     name: "",
