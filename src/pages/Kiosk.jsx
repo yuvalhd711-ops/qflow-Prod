@@ -252,7 +252,7 @@ export default function Kiosk() {
       });
       
       console.log("[SMS] Ticket created:", newTicket.id);
-      
+
       // Try to send SMS, but don't fail if it doesn't work
       try {
         console.log("[SMS] Sending SMS...");
@@ -265,13 +265,18 @@ export default function Kiosk() {
       } catch (smsError) {
         console.warn('[SMS] SMS sending failed, but ticket was created:', smsError);
       }
-      
+
       console.log("[SMS] Showing success screen");
       setCurrentTicket(newTicket);
       setShowTicket(true);
       setSmsDialog(false);
       setPhoneNumber("");
       setJoinClub(false);
+
+      // Print ticket
+      setTimeout(() => {
+        printTicket(newTicket);
+      }, 500);
       
       setTimeout(() => {
         setShowTicket(false);
