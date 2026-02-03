@@ -92,67 +92,126 @@ export default function Kiosk() {
     }
   }, [queue_id, loadQueue]);
 
-  // Print ticket
+  // Print ticket with thermal printer simulation
   const printTicket = (ticket) => {
-    const printWindow = window.open('', '_blank', 'width=300,height=400');
+    const createdTime = new Date().toLocaleTimeString('he-IL', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
     
-    const ticketHTML = `
+    const printContent = `
       <!DOCTYPE html>
       <html dir="rtl">
       <head>
         <meta charset="utf-8">
         <title>כרטיס תור</title>
         <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          @media print {
+            @page {
+              margin: 2mm !important;
+              size: 80mm auto !important;
+            }
+            
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+          }
+          
           body { 
             font-family: Arial, sans-serif; 
             text-align: center; 
-            padding: 20px;
+            padding: 5mm;
             direction: rtl;
+            width: 80mm;
+            background: white;
           }
-          .ticket-number { 
-            font-size: 120px; 
+          
+          .header { 
+            font-size: 18px; 
             font-weight: bold; 
-            margin: 30px 0;
-            color: #E52521;
-          }
-          .queue-name { 
-            font-size: 32px; 
-            font-weight: bold; 
-            margin: 20px 0;
+            margin-bottom: 8px;
             color: #1F5F25;
           }
-          .header { 
-            font-size: 28px; 
+          
+          .queue-name { 
+            font-size: 22px; 
             font-weight: bold; 
-            margin-bottom: 10px;
+            margin: 10px 0;
+            color: #1F5F25;
+            border-top: 2px dashed #333;
+            border-bottom: 2px dashed #333;
+            padding: 8px 0;
           }
-          .footer { 
-            font-size: 18px; 
-            margin-top: 30px; 
+          
+          .ticket-code { 
+            font-size: 72px; 
+            font-weight: bold; 
+            margin: 15px 0;
+            color: #E52521;
+            line-height: 1;
+          }
+          
+          .time { 
+            font-size: 14px; 
             color: #666;
+            margin: 8px 0;
+          }
+          
+          .footer { 
+            font-size: 12px; 
+            margin-top: 10px;
+            color: #666;
+            line-height: 1.5;
+          }
+          
+          .divider {
+            border-top: 1px dashed #999;
+            margin: 10px 0;
           }
         </style>
       </head>
-      <body>
+      <body onload="window.print();">
         <div class="header">שוק העיר</div>
         <div class="queue-name">${queue.name}</div>
-        <div class="ticket-number">${ticket.ticket_number}</div>
+        <div class="ticket-code">${String(ticket.ticket_number).padStart(3, '0')}</div>
+        <div class="time">שעת הוצאה: ${createdTime}</div>
+        <div class="divider"></div>
         <div class="footer">
           נא להמתין עד לקריאת מספרך<br/>
           תודה שבחרת בשוק העיר!
         </div>
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(() => window.close(), 1000);
-          };
-        </script>
       </body>
       </html>
     `;
     
-    printWindow.document.write(ticketHTML);
-    printWindow.document.close();
+    // Create hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '-10000px';
+    iframe.style.left = '-10000px';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.opacity = '0';
+    iframe.style.border = 'none';
+    
+    document.body.appendChild(iframe);
+    
+    // Write content to iframe
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(printContent);
+    iframe.contentWindow.document.close();
+    
+    // Cleanup after print
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 2000);
   };
 
   // Handle print
