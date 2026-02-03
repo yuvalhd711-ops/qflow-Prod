@@ -92,107 +92,120 @@ export default function Kiosk() {
     }
   }, [queue_id, loadQueue]);
 
-  // Print ticket with thermal printer simulation
+  // Print ticket - thermal printer simulation
   const printTicket = (ticket) => {
+    // Remove any existing print iframe
+    const existingIframe = document.getElementById('print-iframe');
+    if (existingIframe) {
+      existingIframe.remove();
+    }
+    
     const createdTime = new Date().toLocaleTimeString('he-IL', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
     
-    const printContent = `
-      <!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <meta charset="utf-8">
-        <title>כרטיס תור</title>
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          @media print {
-            @page {
-              margin: 2mm !important;
-              size: 80mm auto !important;
-            }
-            
-            body {
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-          }
-          
-          body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding: 5mm;
-            direction: rtl;
-            width: 80mm;
-            background: white;
-          }
-          
-          .header { 
-            font-size: 18px; 
-            font-weight: bold; 
-            margin-bottom: 8px;
-            color: #1F5F25;
-          }
-          
-          .queue-name { 
-            font-size: 22px; 
-            font-weight: bold; 
-            margin: 10px 0;
-            color: #1F5F25;
-            border-top: 2px dashed #333;
-            border-bottom: 2px dashed #333;
-            padding: 8px 0;
-          }
-          
-          .ticket-code { 
-            font-size: 72px; 
-            font-weight: bold; 
-            margin: 15px 0;
-            color: #E52521;
-            line-height: 1;
-          }
-          
-          .time { 
-            font-size: 14px; 
-            color: #666;
-            margin: 8px 0;
-          }
-          
-          .footer { 
-            font-size: 12px; 
-            margin-top: 10px;
-            color: #666;
-            line-height: 1.5;
-          }
-          
-          .divider {
-            border-top: 1px dashed #999;
-            margin: 10px 0;
-          }
-        </style>
-      </head>
-      <body onload="window.print();">
-        <div class="header">שוק העיר</div>
-        <div class="queue-name">${queue.name}</div>
-        <div class="ticket-code">${String(ticket.ticket_number).padStart(3, '0')}</div>
-        <div class="time">שעת הוצאה: ${createdTime}</div>
-        <div class="divider"></div>
-        <div class="footer">
-          נא להמתין עד לקריאת מספרך<br/>
-          תודה שבחרת בשוק העיר!
-        </div>
-      </body>
-      </html>
-    `;
+    const printContent = `<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>כרטיס תור</title>
+  <style>
+    html, body {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+    }
     
-    // Create hidden iframe
+    @page {
+      size: 80mm auto !important;
+      margin: 2mm !important;
+    }
+    
+    @media print {
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      .container {
+        width: 80mm;
+        margin: 0;
+        padding: 5mm;
+      }
+    }
+    
+    .container {
+      width: 80mm;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 5mm;
+      background: white;
+    }
+    
+    .header { 
+      font-size: 18px; 
+      font-weight: bold; 
+      margin-bottom: 8px;
+      color: #1F5F25;
+    }
+    
+    .queue-name { 
+      font-size: 22px; 
+      font-weight: bold; 
+      margin: 10px 0;
+      color: #1F5F25;
+      border-top: 2px dashed #333;
+      border-bottom: 2px dashed #333;
+      padding: 8px 0;
+    }
+    
+    .ticket-code { 
+      font-size: 72px; 
+      font-weight: bold; 
+      margin: 15px 0;
+      color: #E52521;
+      line-height: 1;
+    }
+    
+    .time { 
+      font-size: 14px; 
+      color: #666;
+      margin: 8px 0;
+    }
+    
+    .footer { 
+      font-size: 12px; 
+      margin-top: 10px;
+      color: #666;
+      line-height: 1.5;
+    }
+    
+    .divider {
+      border-top: 1px dashed #999;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body onload="window.print();">
+  <div class="container">
+    <div class="header">שוק העיר</div>
+    <div class="queue-name">${queue.name}</div>
+    <div class="ticket-code">${String(ticket.ticket_number).padStart(3, '0')}</div>
+    <div class="time">שעת הוצאה: ${createdTime}</div>
+    <div class="divider"></div>
+    <div class="footer">
+      נא להמתין עד לקריאת מספרך<br/>
+      תודה שבחרת בשוק העיר!
+    </div>
+  </div>
+</body>
+</html>`;
+    
+    // Create new hidden iframe
     const iframe = document.createElement('iframe');
+    iframe.id = 'print-iframe';
     iframe.style.position = 'fixed';
     iframe.style.top = '-10000px';
     iframe.style.left = '-10000px';
@@ -203,15 +216,17 @@ export default function Kiosk() {
     
     document.body.appendChild(iframe);
     
-    // Write content to iframe
+    // Write full HTML document to iframe
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(printContent);
     iframe.contentWindow.document.close();
     
     // Cleanup after print
     setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 2000);
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 3000);
   };
 
   // Handle print
