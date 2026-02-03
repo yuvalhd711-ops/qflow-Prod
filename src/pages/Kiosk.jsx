@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
-import { Printer, Smartphone } from "lucide-react";
+import { Printer, Smartphone, Languages, ArrowRight } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function Kiosk() {
@@ -21,6 +21,8 @@ export default function Kiosk() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [joinClub, setJoinClub] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
+  const [language, setLanguage] = useState('he');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
