@@ -53,6 +53,7 @@ import Console from './pages/Console';
 import Display from './pages/Display';
 import Home from './pages/Home';
 import Kiosk from './pages/Kiosk';
+import Reports from './pages/Reports';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "Display": Display,
     "Home": Home,
     "Kiosk": Kiosk,
+    "Reports": Reports,
 }
 
 export const pagesConfig = {
