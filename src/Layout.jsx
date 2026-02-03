@@ -9,7 +9,8 @@ import {
   LogOut,
   Smartphone,
   Users,
-  Building2
+  Building2,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
