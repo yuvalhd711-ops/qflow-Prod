@@ -111,11 +111,24 @@ export default function Kiosk() {
   <meta charset="utf-8">
   <title>כרטיס תור</title>
   <style>
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      box-sizing: border-box;
+    }
+    
     html, body {
-      width: 100%;
-      margin: 0;
-      padding: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: auto !important;
+      overflow: hidden !important;
       direction: rtl;
+    }
+    
+    body {
+      font-weight: 700;
     }
     
     @page {
@@ -125,12 +138,14 @@ export default function Kiosk() {
     
     @media print {
       html, body {
+        width: 80mm !important;
         margin: 0 !important;
         padding: 0 !important;
       }
       
       .container {
-        width: 80mm;
+        width: 80mm !important;
+        max-width: 80mm !important;
         margin: 0;
         padding: 5mm;
       }
@@ -138,6 +153,7 @@ export default function Kiosk() {
     
     .container {
       width: 80mm;
+      max-width: 80mm;
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 5mm;
@@ -146,49 +162,51 @@ export default function Kiosk() {
     
     .header { 
       font-size: 18px; 
-      font-weight: bold; 
+      font-weight: 900; 
       margin-bottom: 8px;
-      color: #1F5F25;
+      color: #000;
     }
     
     .queue-name { 
       font-size: 22px; 
-      font-weight: bold; 
+      font-weight: 900; 
       margin: 10px 0;
-      color: #1F5F25;
-      border-top: 2px dashed #333;
-      border-bottom: 2px dashed #333;
+      color: #000;
+      border-top: 2px solid #000;
+      border-bottom: 2px solid #000;
       padding: 8px 0;
     }
     
     .ticket-code { 
-      font-size: 72px; 
-      font-weight: bold; 
+      font-size: 84px; 
+      font-weight: 900; 
       margin: 15px 0;
-      color: #E52521;
+      color: #000;
       line-height: 1;
     }
     
     .time { 
       font-size: 14px; 
-      color: #666;
+      font-weight: 700;
+      color: #000;
       margin: 8px 0;
     }
     
     .footer { 
       font-size: 12px; 
+      font-weight: 700;
       margin-top: 10px;
-      color: #666;
+      color: #000;
       line-height: 1.5;
     }
     
     .divider {
-      border-top: 1px dashed #999;
+      border-top: 1px solid #000;
       margin: 10px 0;
     }
   </style>
 </head>
-<body onload="window.print();">
+<body>
   <div class="container">
     <div class="header">שוק העיר</div>
     <div class="queue-name">${queue.name}</div>
@@ -211,7 +229,6 @@ export default function Kiosk() {
     iframe.style.left = '-10000px';
     iframe.style.width = '1px';
     iframe.style.height = '1px';
-    iframe.style.opacity = '0';
     iframe.style.border = 'none';
     
     document.body.appendChild(iframe);
@@ -221,12 +238,28 @@ export default function Kiosk() {
     iframe.contentWindow.document.write(printContent);
     iframe.contentWindow.document.close();
     
-    // Cleanup after print
+    // Wait for iframe load then print
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.print();
+      }, 100);
+    };
+    
+    // Cleanup after print using afterprint event
+    iframe.contentWindow.addEventListener('afterprint', () => {
+      setTimeout(() => {
+        if (iframe && iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
+      }, 500);
+    });
+    
+    // Fallback cleanup if afterprint doesn't fire
     setTimeout(() => {
       if (iframe && iframe.parentNode) {
         iframe.parentNode.removeChild(iframe);
       }
-    }, 3000);
+    }, 5000);
   };
 
   // Handle print
