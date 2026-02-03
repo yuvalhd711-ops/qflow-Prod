@@ -122,6 +122,11 @@ export default function Layout({ children, currentPageName }) {
       icon: Tv,
     },
     {
+      title: "דוחות וסטטיסטיקות",
+      url: createPageUrl("Reports"),
+      icon: TrendingUp,
+    },
+    {
       title: "ניהול מערכת",
       url: createPageUrl("Admin"),
       icon: Settings,
