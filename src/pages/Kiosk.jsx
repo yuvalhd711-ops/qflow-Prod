@@ -402,14 +402,20 @@ export default function Kiosk() {
     }
   };
 
+  const t = (heText, enText) => language === 'he' ? heText : enText;
+
   const selectBranch = (branchId) => {
-    window.location.href = createPageUrl("Kiosk") + "?branch_id=" + branchId;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      window.location.href = createPageUrl("Kiosk") + "?branch_id=" + branchId;
+    }, 300);
   };
 
   const selectDepartment = (deptName) => {
     const deptQueue = activeDepartments.find(d => d.department === deptName);
     if (!deptQueue) return;
     
+    setIsTransitioning(true);
     // Find the queue
     base44.entities.Queue.list().then(allQueues => {
       const targetQueue = allQueues.find(q => 
@@ -419,7 +425,9 @@ export default function Kiosk() {
       );
       
       if (targetQueue) {
-        window.location.href = createPageUrl("Kiosk") + "?branch_id=" + branch_id + "&queue_id=" + targetQueue.id;
+        setTimeout(() => {
+          window.location.href = createPageUrl("Kiosk") + "?branch_id=" + branch_id + "&queue_id=" + targetQueue.id;
+        }, 300);
       }
     });
   };
