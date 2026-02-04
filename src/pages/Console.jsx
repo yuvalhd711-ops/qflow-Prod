@@ -392,7 +392,9 @@ export default function Console() {
       
       await base44.entities.Ticket.update(currentTicket.id, {
         state: "served",
-        finished_at: finishedAt.toISOString()
+        finished_at: finishedAt.toISOString(),
+        served_by: user?.email || "unknown",
+        service_time_seconds: serviceTime
       });
       
       // Update average service time (EMA)

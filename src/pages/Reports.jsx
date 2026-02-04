@@ -14,6 +14,7 @@ export default function Reports() {
   const [tickets, setTickets] = useState([]);
   const [branches, setBranches] = useState([]);
   const [queues, setQueues] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [dateRange, setDateRange] = useState("7days");
@@ -26,15 +27,17 @@ export default function Reports() {
 
   const loadData = async () => {
     try {
-      const [ticketsData, branchesData, queuesData] = await Promise.all([
+      const [ticketsData, branchesData, queuesData, usersData] = await Promise.all([
         base44.entities.Ticket.list(),
         base44.entities.Branch.list(),
-        base44.entities.Queue.list()
+        base44.entities.Queue.list(),
+        base44.entities.User.list()
       ]);
 
       setTickets(ticketsData);
       setBranches(branchesData);
       setQueues(queuesData);
+      setUsers(usersData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -265,6 +268,66 @@ export default function Reports() {
       .sort((a, b) => b.concurrent - a.concurrent);
   };
 
+  // Employee performance statistics
+  const getEmployeePerformance = () => {
+    const filtered = getFilteredTickets().filter(t => t.state === "served" && t.served_by);
+    const employeeStats = {};
+    
+    filtered.forEach(ticket => {
+      const employeeEmail = ticket.served_by;
+      if (!employeeStats[employeeEmail]) {
+        employeeStats[employeeEmail] = {
+          email: employeeEmail,
+          ticketsServed: 0,
+          totalServiceTime: 0,
+          totalWaitTime: 0,
+          ticketsWithTime: 0
+        };
+      }
+      
+      employeeStats[employeeEmail].ticketsServed++;
+      
+      if (ticket.service_time_seconds) {
+        employeeStats[employeeEmail].totalServiceTime += ticket.service_time_seconds;
+        employeeStats[employeeEmail].ticketsWithTime++;
+      }
+      
+      if (ticket.called_at && ticket.finished_at) {
+        const waitTime = (new Date(ticket.finished_at) - new Date(ticket.called_at)) / 1000;
+        employeeStats[employeeEmail].totalWaitTime += waitTime;
+      }
+    });
+    
+    return Object.values(employeeStats).map(emp => {
+      const user = users.find(u => u.email === emp.email);
+      return {
+        name: user?.full_name || emp.email,
+        email: emp.email,
+        ticketsServed: emp.ticketsServed,
+        avgServiceTime: emp.ticketsWithTime > 0 
+          ? Math.round(emp.totalServiceTime / emp.ticketsWithTime / 60) 
+          : 0,
+        avgWaitTime: emp.ticketsServed > 0
+          ? Math.round(emp.totalWaitTime / emp.ticketsServed / 60)
+          : 0
+      };
+    }).sort((a, b) => b.ticketsServed - a.ticketsServed);
+  };
+
+  const getEmployeeServiceTimeChart = () => {
+    return getEmployeePerformance().slice(0, 10).map(emp => ({
+      name: emp.name,
+      avgTime: emp.avgServiceTime
+    }));
+  };
+
+  const getEmployeeTicketsChart = () => {
+    return getEmployeePerformance().slice(0, 10).map(emp => ({
+      name: emp.name,
+      tickets: emp.ticketsServed
+    }));
+  };
+
   const COLORS = ['#E52521', '#41B649', '#1F5F25', '#F59E0B', '#8B5CF6'];
 
   const stats = calculateStats();
@@ -419,7 +482,7 @@ export default function Reports() {
 
         {/* Charts */}
         <Tabs defaultValue="hourly" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6 bg-white">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 mb-6 bg-white">
             <TabsTrigger value="hourly">לפי שעה</TabsTrigger>
             <TabsTrigger value="daily">לפי יום</TabsTrigger>
             <TabsTrigger value="departments">מחלקות</TabsTrigger>
@@ -428,6 +491,7 @@ export default function Reports() {
             <TabsTrigger value="waittime">זמן המתנה</TabsTrigger>
             <TabsTrigger value="cancelled">ביטולים</TabsTrigger>
             <TabsTrigger value="peak">זמן שיא</TabsTrigger>
+            <TabsTrigger value="employees">עובדים</TabsTrigger>
           </TabsList>
 
           <TabsContent value="hourly">
@@ -690,6 +754,184 @@ export default function Reports() {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="employees">
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">סה"כ עובדים פעילים</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold" style={{ color: '#1F5F25' }}>
+                      {getEmployeePerformance().length}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">ממוצע תורים לעובד</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold" style={{ color: '#1F5F25' }}>
+                      {getEmployeePerformance().length > 0
+                        ? Math.round(getEmployeePerformance().reduce((sum, e) => sum + e.ticketsServed, 0) / getEmployeePerformance().length)
+                        : 0}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">ממוצע זמן שירות</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold" style={{ color: '#1F5F25' }}>
+                      {getEmployeePerformance().length > 0
+                        ? Math.round(getEmployeePerformance().reduce((sum, e) => sum + e.avgServiceTime, 0) / getEmployeePerformance().length)
+                        : 0}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">דקות</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                  <CardHeader>
+                    <CardTitle style={{ color: '#1F5F25' }}>תורים שטופלו לפי עובד</CardTitle>
+                    <p className="text-sm text-gray-600 mt-2">10 העובדים המובילים</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={getEmployeeTicketsChart()} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="tickets" fill="#41B649" name="תורים שטופלו" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                  <CardHeader>
+                    <CardTitle style={{ color: '#1F5F25' }}>זמן שירות ממוצע לעובד</CardTitle>
+                    <p className="text-sm text-gray-600 mt-2">בדקות</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={getEmployeeServiceTimeChart()} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="avgTime" fill="#E52521" name="זמן ממוצע (דקות)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Detailed Table */}
+              <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                <CardHeader>
+                  <CardTitle style={{ color: '#1F5F25' }}>טבלת ביצועים מפורטת</CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    נתוני ביצועים מלאים לכל עובד
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">דירוג</TableHead>
+                          <TableHead className="text-right">שם עובד</TableHead>
+                          <TableHead className="text-right">תורים שטופלו</TableHead>
+                          <TableHead className="text-right">זמן שירות ממוצע</TableHead>
+                          <TableHead className="text-right">זמן המתנה ממוצע</TableHead>
+                          <TableHead className="text-right">ביצועים</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getEmployeePerformance().length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                              אין נתוני עובדים זמינים לטווח הנבחר
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          getEmployeePerformance().map((emp, index) => {
+                            const allEmployees = getEmployeePerformance();
+                            const avgTickets = allEmployees.reduce((sum, e) => sum + e.ticketsServed, 0) / allEmployees.length;
+                            const avgServiceTime = allEmployees.reduce((sum, e) => sum + e.avgServiceTime, 0) / allEmployees.length;
+                            
+                            // Performance rating based on tickets served and service time
+                            const ticketsScore = (emp.ticketsServed / avgTickets) * 50;
+                            const timeScore = emp.avgServiceTime > 0 
+                              ? (avgServiceTime / emp.avgServiceTime) * 50 
+                              : 0;
+                            const totalScore = Math.min(100, ticketsScore + timeScore);
+                            
+                            let performanceBadge = { text: "טוב", color: "#41B649" };
+                            if (totalScore >= 90) {
+                              performanceBadge = { text: "מצוין", color: "#1F5F25" };
+                            } else if (totalScore >= 70) {
+                              performanceBadge = { text: "טוב מאוד", color: "#41B649" };
+                            } else if (totalScore < 50) {
+                              performanceBadge = { text: "דורש שיפור", color: "#E52521" };
+                            }
+                            
+                            return (
+                              <TableRow key={emp.email}>
+                                <TableCell>
+                                  <div 
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                                    style={{ backgroundColor: index < 3 ? '#E52521' : '#41B649' }}
+                                  >
+                                    {index + 1}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium">{emp.name}</TableCell>
+                                <TableCell>
+                                  <span className="text-lg font-bold" style={{ color: '#1F5F25' }}>
+                                    {emp.ticketsServed}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium">{emp.avgServiceTime} דקות</span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium">{emp.avgWaitTime} דקות</span>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge style={{ 
+                                    backgroundColor: performanceBadge.color + '20',
+                                    color: performanceBadge.color,
+                                    borderColor: performanceBadge.color,
+                                    borderWidth: '1px'
+                                  }}>
+                                    {performanceBadge.text}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
