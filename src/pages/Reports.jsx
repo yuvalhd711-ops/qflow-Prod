@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Calendar, Clock, TrendingUp, Users, Award } from "lucide-react";
+import { Calendar, Clock, TrendingUp, Users, Award, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export default function Reports() {
   const [tickets, setTickets] = useState([]);
@@ -13,6 +17,8 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [dateRange, setDateRange] = useState("7days");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   useEffect(() => {
     loadData();
@@ -37,6 +43,18 @@ export default function Reports() {
   };
 
   const filterTicketsByDateRange = (tickets) => {
+    if (dateRange === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return tickets.filter(t => {
+        const createdDate = new Date(t.created_date);
+        return createdDate >= start && createdDate <= end;
+      });
+    }
+    
     const now = new Date();
     const ranges = {
       "7days": 7,
@@ -186,6 +204,67 @@ export default function Reports() {
     }));
   };
 
+  // Wait time by department
+  const getWaitTimeByDepartment = () => {
+    const filtered = getFilteredTickets();
+    const deptWaitTimes = {};
+    
+    filtered.forEach(ticket => {
+      if (ticket.state === "served" && ticket.called_at && ticket.finished_at) {
+        const queue = queues.find(q => q.id === ticket.queue_id);
+        if (queue) {
+          const waitTime = (new Date(ticket.finished_at) - new Date(ticket.called_at)) / 60000;
+          if (!deptWaitTimes[queue.name]) {
+            deptWaitTimes[queue.name] = { total: 0, count: 0 };
+          }
+          deptWaitTimes[queue.name].total += waitTime;
+          deptWaitTimes[queue.name].count++;
+        }
+      }
+    });
+    
+    return Object.entries(deptWaitTimes).map(([name, data]) => ({
+      name,
+      avgWaitTime: Math.round(data.total / data.count)
+    }));
+  };
+
+  // Cancelled/no-show tickets
+  const getCancelledTickets = () => {
+    const filtered = getFilteredTickets().filter(t => t.state === "cancelled");
+    return filtered.map(ticket => {
+      const queue = queues.find(q => q.id === ticket.queue_id);
+      const branch = branches.find(b => b.id === ticket.branch_id);
+      return {
+        ...ticket,
+        queueName: queue?.name || "לא ידוע",
+        branchName: branch?.name || "לא ידוע",
+        createdTime: new Date(ticket.created_date).toLocaleString('he-IL')
+      };
+    });
+  };
+
+  // Peak times - concurrent active tickets
+  const getPeakTimes = () => {
+    const filtered = getFilteredTickets();
+    const hourConcurrent = {};
+    
+    for (let i = 0; i < 24; i++) {
+      hourConcurrent[i] = 0;
+    }
+    
+    filtered.forEach(ticket => {
+      if (ticket.created_date) {
+        const createdHour = new Date(ticket.created_date).getHours();
+        hourConcurrent[createdHour]++;
+      }
+    });
+    
+    return Object.entries(hourConcurrent)
+      .map(([hour, count]) => ({ hour: `${hour}:00`, concurrent: count }))
+      .sort((a, b) => b.concurrent - a.concurrent);
+  };
+
   const COLORS = ['#E52521', '#41B649', '#1F5F25', '#F59E0B', '#8B5CF6'];
 
   const stats = calculateStats();
@@ -213,7 +292,7 @@ export default function Reports() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-wrap gap-4 mb-6">
           <Select value={selectedBranch} onValueChange={setSelectedBranch}>
             <SelectTrigger className="w-48 bg-white">
               <SelectValue placeholder="בחר סניף" />
@@ -237,8 +316,47 @@ export default function Reports() {
               <SelectItem value="30days">30 ימים אחרונים</SelectItem>
               <SelectItem value="90days">90 ימים אחרונים</SelectItem>
               <SelectItem value="all">כל הזמן</SelectItem>
+              <SelectItem value="custom">טווח מותאם אישית</SelectItem>
             </SelectContent>
           </Select>
+
+          {dateRange === "custom" && (
+            <>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">מתאריך:</label>
+                <Input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">עד תאריך:</label>
+                <Input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+              {customStartDate && customEndDate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCustomStartDate("");
+                    setCustomEndDate("");
+                    setDateRange("7days");
+                  }}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  נקה
+                </Button>
+              )}
+            </>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -301,12 +419,15 @@ export default function Reports() {
 
         {/* Charts */}
         <Tabs defaultValue="hourly" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6 bg-white">
             <TabsTrigger value="hourly">לפי שעה</TabsTrigger>
             <TabsTrigger value="daily">לפי יום</TabsTrigger>
             <TabsTrigger value="departments">מחלקות</TabsTrigger>
             <TabsTrigger value="branches">סניפים</TabsTrigger>
             <TabsTrigger value="sources">מקורות</TabsTrigger>
+            <TabsTrigger value="waittime">זמן המתנה</TabsTrigger>
+            <TabsTrigger value="cancelled">ביטולים</TabsTrigger>
+            <TabsTrigger value="peak">זמן שיא</TabsTrigger>
           </TabsList>
 
           <TabsContent value="hourly">
@@ -451,6 +572,128 @@ export default function Reports() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="waittime">
+            <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+              <CardHeader>
+                <CardTitle style={{ color: '#1F5F25' }}>זמן המתנה ממוצע לפי מחלקה</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={getWaitTimeByDepartment()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis label={{ value: 'דקות', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="avgWaitTime" fill="#F59E0B" name="זמן ממוצע (דקות)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cancelled">
+            <Card className="bg-white" style={{ borderColor: '#E52521', borderWidth: '2px' }}>
+              <CardHeader>
+                <CardTitle style={{ color: '#E52521' }}>תורים שבוטלו / לא הופיעו</CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  סה"כ {getCancelledTickets().length} תורים שבוטלו בטווח הנבחר
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-auto max-h-96">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">מספר תור</TableHead>
+                        <TableHead className="text-right">סניף</TableHead>
+                        <TableHead className="text-right">מחלקה</TableHead>
+                        <TableHead className="text-right">תאריך ושעה</TableHead>
+                        <TableHead className="text-right">טלפון</TableHead>
+                        <TableHead className="text-right">מקור</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getCancelledTickets().length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-gray-500">
+                            אין תורים שבוטלו בטווח הנבחר
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        getCancelledTickets().map((ticket) => (
+                          <TableRow key={ticket.id}>
+                            <TableCell className="font-medium">{ticket.ticket_number}</TableCell>
+                            <TableCell>{ticket.branchName}</TableCell>
+                            <TableCell>{ticket.queueName}</TableCell>
+                            <TableCell className="text-sm">{ticket.createdTime}</TableCell>
+                            <TableCell className="text-sm">{ticket.customer_phone || "-"}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {ticket.source === 'kiosk' ? 'קיוסק' : ticket.source === 'qr' ? 'QR' : 'אינטרנט'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="peak">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                <CardHeader>
+                  <CardTitle style={{ color: '#1F5F25' }}>זמני שיא - תורים לפי שעה</CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    השעות עם הכי הרבה תורים פעילים
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={getPeakTimes().slice(0, 12)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="hour" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="concurrent" fill="#E52521" name="תורים פעילים" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                <CardHeader>
+                  <CardTitle style={{ color: '#1F5F25' }}>דירוג שעות השיא</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {getPeakTimes().slice(0, 10).map((peak, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: index < 3 ? '#E52521' : '#41B649' }}
+                          >
+                            {index + 1}
+                          </div>
+                          <span className="font-medium text-lg">{peak.hour}</span>
+                        </div>
+                        <span className="font-bold text-xl" style={{ color: '#1F5F25' }}>
+                          {peak.concurrent} תורים
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

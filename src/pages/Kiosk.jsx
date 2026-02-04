@@ -21,10 +21,62 @@ export default function Kiosk() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [joinClub, setJoinClub] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
+  const [language, setLanguage] = useState("he");
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
   const queue_id = urlParams.get('queue_id');
+
+  const translations = {
+    he: {
+      selectBranch: "בחר סניף",
+      selectBranchDesc: "בחר את הסניף שבו אתה נמצא",
+      selectDepartment: "בחר מחלקה",
+      selectDepartmentDesc: "בחר את המחלקה שברצונך לקבל בה שירות",
+      clickForTicket: "לחץ לקבלת תור",
+      backToBranch: "← חזרה לבחירת סניף",
+      backToDepartment: "← חזרה לבחירת מחלקה",
+      chooseOption: "בחר אפשרות לקבלת מספר תור",
+      getNumber: "קבלת מספר",
+      getNumberSMS: "קבלת מספר ב-SMS",
+      smsDialogTitle: "קבל תור ב-SMS",
+      phoneNumber: "מספר טלפון",
+      joinClub: "רוצה להצטרף למועדון לקוחות שוק העיר? (הטבות והנחות)",
+      cancel: "ביטול",
+      sendSMS: "שלח לי תור ב-SMS",
+      sending: "שולח...",
+      ticketCreated: "כרטיס נוצר בהצלחה!",
+      yourNumber: "מספר התור שלך:",
+      smsSent: "נשלח אליך SMS עם פרטי התור",
+      ticketPrinted: "הכרטיס מודפס עבורך",
+      loading: "טוען..."
+    },
+    en: {
+      selectBranch: "Select Branch",
+      selectBranchDesc: "Choose the branch where you are located",
+      selectDepartment: "Select Department",
+      selectDepartmentDesc: "Choose the department you wish to be served in",
+      clickForTicket: "Click to get a ticket",
+      backToBranch: "← Back to Branch Selection",
+      backToDepartment: "← Back to Department Selection",
+      chooseOption: "Choose an option to get your ticket number",
+      getNumber: "Get Number",
+      getNumberSMS: "Get Number via SMS",
+      smsDialogTitle: "Get Ticket via SMS",
+      phoneNumber: "Phone Number",
+      joinClub: "Would you like to join Shuk Ha'ir loyalty club? (Benefits and discounts)",
+      cancel: "Cancel",
+      sendSMS: "Send me ticket via SMS",
+      sending: "Sending...",
+      ticketCreated: "Ticket Created Successfully!",
+      yourNumber: "Your ticket number:",
+      smsSent: "SMS sent with ticket details",
+      ticketPrinted: "Ticket is printing for you",
+      loading: "Loading..."
+    }
+  };
+
+  const t = translations[language];
 
   // Load branches
   const loadBranches = useCallback(async () => {
@@ -427,16 +479,38 @@ export default function Kiosk() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E6F9EA' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 mx-auto mb-4" style={{ borderColor: '#41B649' }}></div>
-          <p className="text-xl text-gray-600">טוען...</p>
+          <p className="text-xl text-gray-600">{t.loading}</p>
         </div>
       </div>
     );
   }
 
+  const LanguageSelector = () => (
+    <div className="fixed top-6 left-6 z-50 flex gap-2">
+      <Button
+        variant={language === "he" ? "default" : "outline"}
+        onClick={() => setLanguage("he")}
+        className={language === "he" ? "text-white" : ""}
+        style={language === "he" ? { backgroundColor: '#41B649' } : { borderColor: '#41B649', color: '#41B649' }}
+      >
+        עברית
+      </Button>
+      <Button
+        variant={language === "en" ? "default" : "outline"}
+        onClick={() => setLanguage("en")}
+        className={language === "en" ? "text-white" : ""}
+        style={language === "en" ? { backgroundColor: '#41B649' } : { borderColor: '#41B649', color: '#41B649' }}
+      >
+        English
+      </Button>
+    </div>
+  );
+
   // Branch selection
   if (!branch_id) {
     return (
-      <div className="min-h-screen p-8" dir="rtl" style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+        <LanguageSelector />
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
@@ -446,9 +520,9 @@ export default function Kiosk() {
                 className="h-24 w-auto mx-auto mb-6"
               />
               <h1 className="text-5xl font-bold mb-4" style={{ color: '#1F5F25' }}>
-                בחר סניף
+                {t.selectBranch}
               </h1>
-              <p className="text-xl text-gray-600">בחר את הסניף שבו אתה נמצא</p>
+              <p className="text-xl text-gray-600">{t.selectBranchDesc}</p>
             </motion.div>
           </div>
           
@@ -482,7 +556,8 @@ export default function Kiosk() {
   // Department selection
   if (branch_id && !queue_id) {
     return (
-      <div className="min-h-screen p-8" dir="rtl" style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+        <LanguageSelector />
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <img
@@ -491,9 +566,9 @@ export default function Kiosk() {
               className="h-16 w-auto mx-auto mb-4"
             />
             <h1 className="text-4xl font-bold mb-4" style={{ color: '#1F5F25' }}>
-              בחר מחלקה
+              {t.selectDepartment}
             </h1>
-            <p className="text-xl text-gray-600">בחר את המחלקה שברצונך לקבל בה שירות</p>
+            <p className="text-xl text-gray-600">{t.selectDepartmentDesc}</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -513,7 +588,7 @@ export default function Kiosk() {
                 >
                   <div className="flex flex-col items-center gap-3">
                     <div className="text-4xl font-bold">{dept.department}</div>
-                    <div className="text-base font-normal">לחץ לקבלת תור</div>
+                    <div className="text-base font-normal">{t.clickForTicket}</div>
                   </div>
                 </Button>
               </motion.div>
@@ -526,7 +601,7 @@ export default function Kiosk() {
               variant="outline"
               style={{ borderColor: '#41B649', color: '#41B649' }}
             >
-              ← חזרה לבחירת סניף
+              {t.backToBranch}
             </Button>
           </div>
         </div>
@@ -538,8 +613,10 @@ export default function Kiosk() {
   if (queue_id && queue) {
     return (
       <div className="min-h-screen p-8" 
-           dir="rtl" 
+           dir={language === "he" ? "rtl" : "ltr"}
            style={{ backgroundColor: '#E6F9EA' }}>
+        
+        <LanguageSelector />
         
         {/* Back button - top right */}
         <div className="max-w-7xl mx-auto mb-4">
@@ -550,7 +627,7 @@ export default function Kiosk() {
             className="gap-2"
             style={{ borderColor: '#41B649', color: '#41B649' }}
           >
-            ← חזרה לבחירת מחלקה
+            {t.backToDepartment}
           </Button>
         </div>
         
@@ -565,8 +642,8 @@ export default function Kiosk() {
             <h1 className="text-7xl font-bold mb-4" style={{ color: '#1F5F25' }}>
               {queue.name}
             </h1>
-            <p className="text-2xl text-gray-600">בחר אפשרות לקבלת מספר תור</p>
-          </div>
+            <p className="text-2xl text-gray-600">{t.chooseOption}</p>
+            </div>
           
           {/* Two cards - horizontal layout */}
           <div className="grid md:grid-cols-2 gap-8 w-full max-w-5xl px-4">
@@ -593,7 +670,7 @@ export default function Kiosk() {
                 {/* Text */}
                 <div className="mt-auto text-center">
                   <h2 className="text-5xl font-bold text-white">
-                    קבלת מספר
+                    {t.getNumber}
                   </h2>
                 </div>
               </div>
@@ -622,7 +699,7 @@ export default function Kiosk() {
                 {/* Text */}
                 <div className="mt-auto text-center">
                   <h2 className="text-5xl font-bold text-white">
-                    קבלת מספר ב-SMS
+                    {t.getNumberSMS}
                   </h2>
                 </div>
               </div>
@@ -632,16 +709,16 @@ export default function Kiosk() {
 
         {/* SMS Dialog */}
         <Dialog open={smsDialog} onOpenChange={setSmsDialog}>
-          <DialogContent dir="rtl" className="bg-white max-w-md">
+          <DialogContent dir={language === "he" ? "rtl" : "ltr"} className="bg-white max-w-md">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
-                קבל תור ב-SMS
+                {t.smsDialogTitle}
               </DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-4 py-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">מספר טלפון</label>
+                <label className="text-sm font-medium mb-2 block">{t.phoneNumber}</label>
                 <Input
                   type="tel"
                   placeholder="05X-XXXXXXX"
@@ -651,7 +728,7 @@ export default function Kiosk() {
                   dir="ltr"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-2 space-x-reverse">
                 <Checkbox
                   id="join-club"
@@ -660,11 +737,11 @@ export default function Kiosk() {
                   style={{ borderColor: '#41B649' }}
                 />
                 <label htmlFor="join-club" className="text-sm cursor-pointer">
-                  רוצה להצטרף למועדון לקוחות שוק העיר? (הטבות והנחות)
+                  {t.joinClub}
                 </label>
               </div>
             </div>
-            
+
             <DialogFooter className="gap-2">
               <Button
                 variant="outline"
@@ -672,7 +749,7 @@ export default function Kiosk() {
                 disabled={sendingSms}
                 style={{ borderColor: '#E52521', color: '#E52521' }}
               >
-                ביטול
+                {t.cancel}
               </Button>
               <Button
                 onClick={handleSmsTicket}
@@ -683,10 +760,10 @@ export default function Kiosk() {
                 {sendingSms ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>שולח...</span>
+                    <span>{t.sending}</span>
                   </div>
                 ) : (
-                  "שלח לי תור ב-SMS"
+                  t.sendSMS
                 )}
               </Button>
             </DialogFooter>
@@ -704,18 +781,18 @@ export default function Kiosk() {
             <Card className="bg-white p-12 text-center shadow-2xl max-w-lg">
               <div className="text-8xl mb-6">✅</div>
               <h2 className="text-4xl font-bold mb-4" style={{ color: '#1F5F25' }}>
-                כרטיס נוצר בהצלחה!
+                {t.ticketCreated}
               </h2>
               <div className="bg-gray-50 rounded-xl p-8 mb-6">
-                <p className="text-xl mb-2 text-gray-600">מספר התור שלך:</p>
+                <p className="text-xl mb-2 text-gray-600">{t.yourNumber}</p>
                 <p className="text-9xl font-bold" style={{ color: '#E52521' }}>
                   {currentTicket.ticket_number}
                 </p>
               </div>
               <p className="text-lg text-gray-600">
                 {currentTicket.customer_phone 
-                  ? "נשלח אליך SMS עם פרטי התור" 
-                  : "הכרטיס מודפס עבורך"}
+                  ? t.smsSent
+                  : t.ticketPrinted}
               </p>
             </Card>
           </motion.div>
