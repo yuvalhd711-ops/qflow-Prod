@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PhoneCall, CheckCircle, XCircle, SkipForward, ArrowRightLeft, RotateCcw, Volume2, Coffee, History, Search } from "lucide-react";
+import { PhoneCall, CheckCircle, XCircle, SkipForward, ArrowRightLeft, RotateCcw, Volume2, Coffee, History, Search, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 
@@ -28,10 +28,195 @@ export default function Console() {
   const [searchMessage, setSearchMessage] = useState("");
   const [foundTicket, setFoundTicket] = useState(null);
   const [historySearchSeq, setHistorySearchSeq] = useState("");
+  const [language, setLanguage] = useState("he");
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
   const queue_id = urlParams.get('queue_id');
+
+  const translations = {
+    he: {
+      selectBranch: "קונסולת עובד - בחר סניף",
+      selectDepartment: "קונסולת עובד - בחר מחלקה",
+      backToBranch: "← חזרה לבחירת סניף",
+      exitToDepartments: "← יציאה למחלקות",
+      clearQueue: "🗑️ נקה תורים",
+      break: "הפסקה",
+      backToWork: "חזור לעבודה",
+      currentTicket: "תור נוכחי",
+      history: "היסטוריה",
+      searchAndPromote: "חיפוש וקידום תור",
+      enterTicketNumber: "הזן מספר תור...",
+      search: "חפש",
+      promoteToTop: "⬆️ קדם לתחילת התור",
+      currentCard: "כרטיס נוכחי",
+      inService: "בשירות",
+      recall: "קריאה חוזרת",
+      finishService: "סיים שירות",
+      skip: "דלג",
+      customerLeft: "לקוח עזב",
+      returnToQueue: "החזר לתור",
+      transfer: "העבר",
+      noCurrentTicket: "אין כרטיס נוכחי",
+      callNext: "קרא הבא",
+      waiting: "ממתינים",
+      noWaitingTickets: "אין כרטיסים ממתינים",
+      todayHistory: "היסטוריית תורים להיום",
+      searchTicket: "חפש מספר תור...",
+      noResults: "אין תוצאות",
+      served: "טופל",
+      cancelled: "בוטל",
+      skipped: "דולג",
+      transferDialog: "העברת כרטיס למחלקה אחרת",
+      selectTargetDepartment: "בחר מחלקת יעד:",
+      selectDepartment: "בחר מחלקה",
+      cancel: "ביטול",
+      console: "קונסולת עובד",
+      loading: "טוען...",
+      noTickets: "אין כרטיסים ממתינים",
+      confirmClear: "האם אתה בטוח שברצונך למחוק את כל התורים?",
+      clearSuccess: "התורים נוקו בהצלחה!",
+      clearError: "שגיאה: לא ניתן לנקות תורים"
+    },
+    en: {
+      selectBranch: "Employee Console - Select Branch",
+      selectDepartment: "Employee Console - Select Department",
+      backToBranch: "← Back to Branch Selection",
+      exitToDepartments: "← Exit to Departments",
+      clearQueue: "🗑️ Clear Queue",
+      break: "Break",
+      backToWork: "Back to Work",
+      currentTicket: "Current Ticket",
+      history: "History",
+      searchAndPromote: "Search and Promote Ticket",
+      enterTicketNumber: "Enter ticket number...",
+      search: "Search",
+      promoteToTop: "⬆️ Promote to Top",
+      currentCard: "Current Card",
+      inService: "In Service",
+      recall: "Recall",
+      finishService: "Finish Service",
+      skip: "Skip",
+      customerLeft: "Customer Left",
+      returnToQueue: "Return to Queue",
+      transfer: "Transfer",
+      noCurrentTicket: "No current ticket",
+      callNext: "Call Next",
+      waiting: "Waiting",
+      noWaitingTickets: "No waiting tickets",
+      todayHistory: "Today's Ticket History",
+      searchTicket: "Search ticket number...",
+      noResults: "No results",
+      served: "Served",
+      cancelled: "Cancelled",
+      skipped: "Skipped",
+      transferDialog: "Transfer Ticket to Another Department",
+      selectTargetDepartment: "Select target department:",
+      selectDepartment: "Select department",
+      cancel: "Cancel",
+      console: "Employee Console",
+      loading: "Loading...",
+      noTickets: "No waiting tickets",
+      confirmClear: "Are you sure you want to delete all tickets?",
+      clearSuccess: "Queue cleared successfully!",
+      clearError: "Error: Cannot clear queue"
+    },
+    ar: {
+      selectBranch: "وحدة تحكم الموظف - اختر الفرع",
+      selectDepartment: "وحدة تحكم الموظف - اختر القسم",
+      backToBranch: "→ العودة لاختيار الفرع",
+      exitToDepartments: "→ الخروج للأقسام",
+      clearQueue: "🗑️ مسح قائمة الانتظار",
+      break: "استراحة",
+      backToWork: "العودة للعمل",
+      currentTicket: "التذكرة الحالية",
+      history: "السجل",
+      searchAndPromote: "البحث وتقديم التذكرة",
+      enterTicketNumber: "أدخل رقم التذكرة...",
+      search: "بحث",
+      promoteToTop: "⬆️ قدم إلى الأعلى",
+      currentCard: "البطاقة الحالية",
+      inService: "قيد الخدمة",
+      recall: "إعادة الاتصال",
+      finishService: "إنهاء الخدمة",
+      skip: "تخطي",
+      customerLeft: "العميل غادر",
+      returnToQueue: "إرجاع لقائمة الانتظار",
+      transfer: "نقل",
+      noCurrentTicket: "لا توجد تذكرة حالية",
+      callNext: "استدعاء التالي",
+      waiting: "قائمة الانتظار",
+      noWaitingTickets: "لا توجد تذاكر في الانتظار",
+      todayHistory: "سجل تذاكر اليوم",
+      searchTicket: "البحث عن رقم التذكرة...",
+      noResults: "لا توجد نتائج",
+      served: "تم الخدمة",
+      cancelled: "ملغى",
+      skipped: "متخطى",
+      transferDialog: "نقل التذكرة إلى قسم آخر",
+      selectTargetDepartment: "اختر القسم المستهدف:",
+      selectDepartment: "اختر قسم",
+      cancel: "إلغاء",
+      console: "وحدة تحكم الموظف",
+      loading: "جاري التحميل...",
+      noTickets: "لا توجد تذاكر في الانتظار",
+      confirmClear: "هل أنت متأكد من حذف جميع التذاكر؟",
+      clearSuccess: "تم مسح قائمة الانتظار بنجاح!",
+      clearError: "خطأ: لا يمكن مسح قائمة الانتظار"
+    },
+    th: {
+      selectBranch: "คอนโซลพนักงาน - เลือกสาขา",
+      selectDepartment: "คอนโซลพนักงาน - เลือกแผนก",
+      backToBranch: "← กลับไปเลือกสาขา",
+      exitToDepartments: "← ออกไปยังแผนก",
+      clearQueue: "🗑️ ล้างคิว",
+      break: "พักผ่อน",
+      backToWork: "กลับมาทำงาน",
+      currentTicket: "บัตรคิวปัจจุบัน",
+      history: "ประวัติ",
+      searchAndPromote: "ค้นหาและเลื่อนบัตรคิว",
+      enterTicketNumber: "ใส่หมายเลขบัตรคิว...",
+      search: "ค้นหา",
+      promoteToTop: "⬆️ เลื่อนไปด้านบน",
+      currentCard: "บัตรปัจจุบัน",
+      inService: "กำลังให้บริการ",
+      recall: "เรียกซ้ำ",
+      finishService: "เสร็จสิ้นการบริการ",
+      skip: "ข้าม",
+      customerLeft: "ลูกค้าออกไป",
+      returnToQueue: "ส่งกลับคิว",
+      transfer: "โอน",
+      noCurrentTicket: "ไม่มีบัตรคิวปัจจุบัน",
+      callNext: "เรียกคิวถัดไป",
+      waiting: "กำลังรอ",
+      noWaitingTickets: "ไม่มีบัตรคิวที่รออยู่",
+      todayHistory: "ประวัติบัตรคิววันนี้",
+      searchTicket: "ค้นหาหมายเลขบัตรคิว...",
+      noResults: "ไม่มีผลลัพธ์",
+      served: "ให้บริการแล้ว",
+      cancelled: "ยกเลิก",
+      skipped: "ข้าม",
+      transferDialog: "โอนบัตรคิวไปยังแผนกอื่น",
+      selectTargetDepartment: "เลือกแผนกปลายทาง:",
+      selectDepartment: "เลือกแผนก",
+      cancel: "ยกเลิก",
+      console: "คอนโซลพนักงาน",
+      loading: "กำลังโหลด...",
+      noTickets: "ไม่มีบัตรคิวที่รออยู่",
+      confirmClear: "คุณแน่ใจหรือไม่ว่าต้องการลบบัตรคิวทั้งหมด?",
+      clearSuccess: "ล้างคิวสำเร็จ!",
+      clearError: "ข้อผิดพลาด: ไม่สามารถล้างคิวได้"
+    }
+  };
+
+  const t = translations[language];
+
+  const languageNames = {
+    he: "עברית",
+    en: "English",
+    ar: "العربية",
+    th: "ไทย"
+  };
 
   // Load user
   const loadUser = useCallback(async () => {
@@ -168,7 +353,7 @@ export default function Console() {
   const callNext = async () => {
     const nextTicket = waitingTickets[0];
     if (!nextTicket) {
-      alert("אין כרטיסים ממתינים");
+      alert(t.noTickets);
       return;
     }
     
@@ -285,7 +470,7 @@ export default function Console() {
       );
       
       if (targetQueues.length === 0) {
-        alert("המחלקה אינה זמינה");
+        alert(language === "he" ? "המחלקה אינה זמינה" : language === "en" ? "Department not available" : language === "ar" ? "القسم غير متاح" : "แผนกไม่พร้อมใช้งาน");
         return;
       }
       
@@ -319,14 +504,13 @@ export default function Console() {
     
     if (ticket) {
       setFoundTicket(ticket);
-      const statusText = {
-        waiting: "ממתין",
-        called: "נקרא",
-        in_service: "בשירות",
-        served: "טופל",
-        skipped: "דולג",
-        cancelled: "בוטל"
-      }[ticket.state];
+      const statusLabels = {
+        he: { waiting: "ממתין", called: "נקרא", in_service: "בשירות", served: "טופל", skipped: "דולג", cancelled: "בוטל" },
+        en: { waiting: "Waiting", called: "Called", in_service: "In Service", served: "Served", skipped: "Skipped", cancelled: "Cancelled" },
+        ar: { waiting: "في الانتظار", called: "تم الاستدعاء", in_service: "قيد الخدمة", served: "تم الخدمة", skipped: "متخطى", cancelled: "ملغى" },
+        th: { waiting: "กำลังรอ", called: "ถูกเรียก", in_service: "กำลังให้บริการ", served: "ให้บริการแล้ว", skipped: "ข้าม", cancelled: "ยกเลิก" }
+      };
+      const statusText = statusLabels[language][ticket.state];
       
       setSearchMessage(`✓ תור ${ticket.ticket_number} נמצא (${statusText})`);
     } else {
@@ -366,16 +550,53 @@ export default function Console() {
 
   // Clear all tickets
   const clearAllTickets = async () => {
-    if (!confirm("האם אתה בטוח שברצונך למחוק את כל התורים?")) {
+    if (!confirm(t.confirmClear)) {
       return;
     }
     try {
       await base44.functions.invoke('clearQueue', { queue_id });
-      alert("התורים נוקו בהצלחה!");
+      alert(t.clearSuccess);
       await loadData();
     } catch (error) {
-      alert("שגיאה: " + (error.message || "לא ניתן לנקות תורים"));
+      alert(t.clearError);
     }
+  };
+
+  const LanguageSelector = () => {
+    const [showDropdown, setShowDropdown] = useState(false);
+    
+    return (
+      <div className="relative">
+        <Button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="text-white gap-2"
+          style={{ backgroundColor: '#41B649' }}
+        >
+          <Globe className="h-5 w-5" />
+          {languageNames[language]}
+        </Button>
+        
+        {showDropdown && (
+          <div className="absolute top-12 left-0 bg-white rounded-lg shadow-xl border-2 overflow-hidden z-50" style={{ borderColor: '#41B649' }}>
+            {Object.entries(languageNames).map(([code, name]) => (
+              <button
+                key={code}
+                onClick={() => {
+                  setLanguage(code);
+                  setShowDropdown(false);
+                }}
+                className={`w-full px-6 py-3 text-left hover:bg-gray-50 transition-colors ${
+                  language === code ? 'font-bold' : ''
+                }`}
+                style={language === code ? { backgroundColor: '#E6F9EA', color: '#1F5F25' } : {}}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const selectBranch = (branchId) => {
@@ -401,7 +622,7 @@ export default function Console() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E6F9EA' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 mx-auto mb-4" style={{ borderColor: '#41B649' }}></div>
-          <p className="text-xl text-gray-600">טוען...</p>
+          <p className="text-xl text-gray-600">{t.loading}</p>
         </div>
       </div>
     );
@@ -410,7 +631,10 @@ export default function Console() {
   // Branch selection
   if (!branch_id) {
     return (
-      <div className="min-h-screen p-8" dir="rtl" style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+        <div className="fixed top-6 left-6 z-50">
+          <LanguageSelector />
+        </div>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <img
@@ -419,7 +643,7 @@ export default function Console() {
               className="h-16 w-auto mx-auto mb-4"
             />
             <h1 className="text-4xl font-bold mb-4" style={{ color: '#1F5F25' }}>
-              קונסולת עובד - בחר סניף
+              {t.selectBranch}
             </h1>
           </div>
           
@@ -452,7 +676,10 @@ export default function Console() {
   // Department selection
   if (branch_id && !queue_id) {
     return (
-      <div className="min-h-screen p-8" dir="rtl" style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+        <div className="fixed top-6 left-6 z-50">
+          <LanguageSelector />
+        </div>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <img
@@ -463,7 +690,7 @@ export default function Console() {
             <h1 className="text-3xl font-bold mb-2" style={{ color: '#1F5F25' }}>
               {currentBranch?.name}
             </h1>
-            <p className="text-xl text-gray-600">קונסולת עובד - בחר מחלקה</p>
+            <p className="text-xl text-gray-600">{t.selectDepartment}</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -492,7 +719,7 @@ export default function Console() {
               variant="outline"
               style={{ borderColor: '#41B649', color: '#41B649' }}
             >
-              ← חזרה לבחירת סניף
+              {t.backToBranch}
             </Button>
           </div>
         </div>
@@ -502,7 +729,7 @@ export default function Console() {
 
   // Console screen
   return (
-    <div className="min-h-screen p-6" dir="rtl" style={{ backgroundColor: '#E6F9EA' }}>
+    <div className="min-h-screen p-6" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
@@ -515,22 +742,23 @@ export default function Console() {
             <h1 className="text-3xl font-bold" style={{ color: '#111111' }}>
               {queue?.name}
             </h1>
-            <p className="text-gray-600">קונסולת עובד</p>
+            <p className="text-gray-600">{t.console}</p>
           </div>
           
           <div className="flex gap-2 flex-wrap justify-center">
+            <LanguageSelector />
             <Button 
               onClick={() => window.location.href = createPageUrl("Console") + `?branch_id=${branch_id}`}
               variant="outline"
             >
-              ← יציאה למחלקות
+              {t.exitToDepartments}
             </Button>
             <Button 
               onClick={clearAllTickets} 
               variant="outline" 
               style={{ borderColor: '#E52521', color: '#E52521' }}
             >
-              🗑️ נקה תורים
+              {t.clearQueue}
             </Button>
             <Button 
               onClick={() => setOnBreak(!onBreak)}
@@ -538,17 +766,17 @@ export default function Console() {
               style={onBreak ? { backgroundColor: '#41B649', color: 'white' } : {}}
             >
               <Coffee className="w-4 h-4 ml-2" />
-              {onBreak ? "חזור לעבודה" : "הפסקה"}
+              {onBreak ? t.backToWork : t.break}
             </Button>
           </div>
         </div>
 
         <Tabs defaultValue="current" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mx-auto mb-6">
-            <TabsTrigger value="current">תור נוכחי</TabsTrigger>
+            <TabsTrigger value="current">{t.currentTicket}</TabsTrigger>
             <TabsTrigger value="history">
               <History className="w-4 h-4 ml-2" />
-              היסטוריה
+              {t.history}
             </TabsTrigger>
           </TabsList>
           
@@ -559,14 +787,14 @@ export default function Console() {
                 <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
                   <CardTitle className="flex items-center gap-2">
                     <Search className="w-5 h-5" />
-                    חיפוש וקידום תור
+                    {t.searchAndPromote}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="הזן מספר תור..."
+                      placeholder={t.enterTicketNumber}
                       value={searchSeq}
                       onChange={(e) => setSearchSeq(e.target.value)}
                       className="flex-1 text-lg"
@@ -577,7 +805,7 @@ export default function Console() {
                       className="gap-2 text-white"
                       style={{ backgroundColor: '#41B649' }}
                     >
-                      חפש
+                      {t.search}
                     </Button>
                   </div>
                   
@@ -597,7 +825,7 @@ export default function Console() {
                       className="w-full mt-3 text-white"
                       style={{ backgroundColor: '#E52521' }}
                     >
-                      ⬆️ קדם לתחילת התור
+                      {t.promoteToTop}
                     </Button>
                   )}
                 </CardContent>
@@ -606,7 +834,7 @@ export default function Console() {
               {/* Current ticket */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
                 <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle>כרטיס נוכחי</CardTitle>
+                  <CardTitle>{t.currentCard}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   {currentTicket ? (
@@ -620,7 +848,7 @@ export default function Console() {
                         <div className="text-6xl font-bold mb-2" style={{ color: '#E52521' }}>
                           {currentTicket.ticket_number}
                         </div>
-                        <div className="text-lg font-medium">בשירות</div>
+                        <div className="text-lg font-medium">{t.inService}</div>
                       </motion.div>
                       
                       <div className="grid grid-cols-2 gap-3">
@@ -630,7 +858,7 @@ export default function Console() {
                           style={{ backgroundColor: '#E52521' }}
                         >
                           <Volume2 className="w-4 h-4" />
-                          קריאה חוזרת
+                          {t.recall}
                         </Button>
                         
                         <Button 
@@ -639,7 +867,7 @@ export default function Console() {
                           style={{ backgroundColor: '#41B649' }}
                         >
                           <CheckCircle className="w-4 h-4" />
-                          סיים שירות
+                          {t.finishService}
                         </Button>
                         
                         <Button 
@@ -648,7 +876,7 @@ export default function Console() {
                           style={{ backgroundColor: '#E52521' }}
                         >
                           <SkipForward className="w-4 h-4" />
-                          דלג
+                          {t.skip}
                         </Button>
                         
                         <Button 
@@ -657,7 +885,7 @@ export default function Console() {
                           style={{ backgroundColor: '#E52521' }}
                         >
                           <XCircle className="w-4 h-4" />
-                          לקוח עזב
+                          {t.customerLeft}
                         </Button>
                         
                         <Button 
@@ -666,7 +894,7 @@ export default function Console() {
                           style={{ backgroundColor: '#41B649' }}
                         >
                           <RotateCcw className="w-4 h-4" />
-                          החזר לתור
+                          {t.returnToQueue}
                         </Button>
                         
                         <Button 
@@ -675,13 +903,13 @@ export default function Console() {
                           style={{ backgroundColor: '#E52521' }}
                         >
                           <ArrowRightLeft className="w-4 h-4" />
-                          העבר
+                          {t.transfer}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-gray-600 mb-6">אין כרטיס נוכחי</p>
+                      <p className="text-gray-600 mb-6">{t.noCurrentTicket}</p>
                       <Button 
                         onClick={callNext} 
                         size="lg" 
@@ -690,7 +918,7 @@ export default function Console() {
                         disabled={waitingTickets.length === 0}
                       >
                         <PhoneCall className="w-5 h-5" />
-                        קרא הבא
+                        {t.callNext}
                       </Button>
                     </div>
                   )}
@@ -700,13 +928,13 @@ export default function Console() {
               {/* Waiting queue */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
                 <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle>ממתינים ({waitingTickets.length})</CardTitle>
+                  <CardTitle>{t.waiting} ({waitingTickets.length})</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {waitingTickets.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        אין כרטיסים ממתינים
+                        {t.noWaitingTickets}
                       </div>
                     ) : (
                       waitingTickets.slice(0, 10).map((ticket, idx) => (
@@ -734,12 +962,12 @@ export default function Console() {
           <TabsContent value="history">
             <Card className="bg-white shadow-md max-w-3xl mx-auto" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
               <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                <CardTitle>היסטוריית תורים להיום</CardTitle>
+                <CardTitle>{t.todayHistory}</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 <Input
                   type="number"
-                  placeholder="חפש מספר תור..."
+                  placeholder={t.searchTicket}
                   value={historySearchSeq}
                   onChange={(e) => setHistorySearchSeq(e.target.value)}
                   className="mb-4"
@@ -749,14 +977,14 @@ export default function Console() {
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {searchHistoryTicket().length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      אין תוצאות
+                      {t.noResults}
                     </div>
                   ) : (
                     searchHistoryTicket().map((ticket) => {
                       const statusColors = {
-                        served: { bg: '#E6F9EA', text: '#41B649', label: 'טופל' },
-                        cancelled: { bg: '#fee2e2', text: '#dc2626', label: 'בוטל' },
-                        skipped: { bg: '#fef3c7', text: '#d97706', label: 'דולג' }
+                        served: { bg: '#E6F9EA', text: '#41B649', label: t.served },
+                        cancelled: { bg: '#fee2e2', text: '#dc2626', label: t.cancelled },
+                        skipped: { bg: '#fef3c7', text: '#d97706', label: t.skipped }
                       };
                       const status = statusColors[ticket.state] || statusColors.served;
                       
@@ -800,16 +1028,16 @@ export default function Console() {
 
         {/* Transfer Dialog */}
         <Dialog open={transferDialog} onOpenChange={setTransferDialog}>
-          <DialogContent dir="rtl" className="bg-white">
+          <DialogContent dir={language === "he" || language === "ar" ? "rtl" : "ltr"} className="bg-white">
             <DialogHeader>
-              <DialogTitle>העברת כרטיס למחלקה אחרת</DialogTitle>
+              <DialogTitle>{t.transferDialog}</DialogTitle>
             </DialogHeader>
             
             <div className="py-4">
-              <label className="text-sm font-medium mb-2 block">בחר מחלקת יעד:</label>
+              <label className="text-sm font-medium mb-2 block">{t.selectTargetDepartment}</label>
               <Select value={targetDepartmentName} onValueChange={setTargetDepartmentName}>
                 <SelectTrigger>
-                  <SelectValue placeholder="בחר מחלקה" />
+                  <SelectValue placeholder={t.selectDepartment} />
                 </SelectTrigger>
                 <SelectContent>
                   {activeDepartments
@@ -831,7 +1059,7 @@ export default function Console() {
                   setTargetDepartmentName("");
                 }}
               >
-                ביטול
+                {t.cancel}
               </Button>
               <Button
                 onClick={transferTicket}
@@ -839,7 +1067,7 @@ export default function Console() {
                 style={{ backgroundColor: '#41B649' }}
                 disabled={!targetDepartmentName}
               >
-                העבר
+                {t.transfer}
               </Button>
             </DialogFooter>
           </DialogContent>
