@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
-import { Printer, Smartphone } from "lucide-react";
+import { Printer, Smartphone, Globe } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function Kiosk() {
@@ -73,10 +73,63 @@ export default function Kiosk() {
       smsSent: "SMS sent with ticket details",
       ticketPrinted: "Ticket is printing for you",
       loading: "Loading..."
+    },
+    ar: {
+      selectBranch: "اختر الفرع",
+      selectBranchDesc: "اختر الفرع الذي أنت فيه",
+      selectDepartment: "اختر القسم",
+      selectDepartmentDesc: "اختر القسم الذي ترغب في الحصول على الخدمة فيه",
+      clickForTicket: "انقر للحصول على تذكرة",
+      backToBranch: "→ العودة لاختيار الفرع",
+      backToDepartment: "→ العودة لاختيار القسم",
+      chooseOption: "اختر خياراً للحصول على رقم التذكرة",
+      getNumber: "احصل على رقم",
+      getNumberSMS: "احصل على رقم عبر SMS",
+      smsDialogTitle: "احصل على تذكرة عبر SMS",
+      phoneNumber: "رقم الهاتف",
+      joinClub: "هل ترغب في الانضمام إلى نادي عملاء شوك هعير؟ (مزايا وخصومات)",
+      cancel: "إلغاء",
+      sendSMS: "أرسل لي تذكرة عبر SMS",
+      sending: "جاري الإرسال...",
+      ticketCreated: "تم إنشاء التذكرة بنجاح!",
+      yourNumber: "رقم تذكرتك:",
+      smsSent: "تم إرسال SMS مع تفاصيل التذكرة",
+      ticketPrinted: "يتم طباعة التذكرة لك",
+      loading: "جاري التحميل..."
+    },
+    th: {
+      selectBranch: "เลือกสาขา",
+      selectBranchDesc: "เลือกสาขาที่คุณอยู่",
+      selectDepartment: "เลือกแผนก",
+      selectDepartmentDesc: "เลือกแผนกที่คุณต้องการรับบริการ",
+      clickForTicket: "คลิกเพื่อรับบัตรคิว",
+      backToBranch: "← กลับไปเลือกสาขา",
+      backToDepartment: "← กลับไปเลือกแผนก",
+      chooseOption: "เลือกวิธีรับหมายเลขคิวของคุณ",
+      getNumber: "รับหมายเลข",
+      getNumberSMS: "รับหมายเลขผ่าน SMS",
+      smsDialogTitle: "รับบัตรคิวผ่าน SMS",
+      phoneNumber: "หมายเลขโทรศัพท์",
+      joinClub: "คุณต้องการเข้าร่วมชมรมลูกค้า Shuk Ha'ir หรือไม่? (สิทธิพิเศษและส่วนลด)",
+      cancel: "ยกเลิก",
+      sendSMS: "ส่งบัตรคิวให้ฉันผ่าน SMS",
+      sending: "กำลังส่ง...",
+      ticketCreated: "สร้างบัตรคิวสำเร็จ!",
+      yourNumber: "หมายเลขคิวของคุณ:",
+      smsSent: "ส่ง SMS พร้อมรายละเอียดบัตรคิวแล้ว",
+      ticketPrinted: "กำลังพิมพ์บัตรคิวให้คุณ",
+      loading: "กำลังโหลด..."
     }
   };
 
   const t = translations[language];
+
+  const languageNames = {
+    he: "עברית",
+    en: "English",
+    ar: "العربية",
+    th: "ไทย"
+  };
 
   // Load branches
   const loadBranches = useCallback(async () => {
@@ -485,31 +538,49 @@ export default function Kiosk() {
     );
   }
 
-  const LanguageSelector = () => (
-    <div className="fixed top-6 left-6 z-50 flex gap-2">
-      <Button
-        variant={language === "he" ? "default" : "outline"}
-        onClick={() => setLanguage("he")}
-        className={language === "he" ? "text-white" : ""}
-        style={language === "he" ? { backgroundColor: '#41B649' } : { borderColor: '#41B649', color: '#41B649' }}
-      >
-        עברית
-      </Button>
-      <Button
-        variant={language === "en" ? "default" : "outline"}
-        onClick={() => setLanguage("en")}
-        className={language === "en" ? "text-white" : ""}
-        style={language === "en" ? { backgroundColor: '#41B649' } : { borderColor: '#41B649', color: '#41B649' }}
-      >
-        English
-      </Button>
-    </div>
-  );
+  const LanguageSelector = () => {
+    const [showDropdown, setShowDropdown] = React.useState(false);
+    
+    return (
+      <div className="fixed top-6 left-6 z-50">
+        <div className="relative">
+          <Button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="text-white gap-2 shadow-lg"
+            style={{ backgroundColor: '#41B649' }}
+          >
+            <Globe className="h-5 w-5" />
+            {languageNames[language]}
+          </Button>
+          
+          {showDropdown && (
+            <div className="absolute top-12 left-0 bg-white rounded-lg shadow-xl border-2 overflow-hidden" style={{ borderColor: '#41B649' }}>
+              {Object.entries(languageNames).map(([code, name]) => (
+                <button
+                  key={code}
+                  onClick={() => {
+                    setLanguage(code);
+                    setShowDropdown(false);
+                  }}
+                  className={`w-full px-6 py-3 text-left hover:bg-gray-50 transition-colors ${
+                    language === code ? 'font-bold' : ''
+                  }`}
+                  style={language === code ? { backgroundColor: '#E6F9EA', color: '#1F5F25' } : {}}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Branch selection
   if (!branch_id) {
     return (
-      <div className="min-h-screen p-8" dir={language === "he" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
         <LanguageSelector />
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -556,7 +627,7 @@ export default function Kiosk() {
   // Department selection
   if (branch_id && !queue_id) {
     return (
-      <div className="min-h-screen p-8" dir={language === "he" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+      <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
         <LanguageSelector />
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -613,7 +684,7 @@ export default function Kiosk() {
   if (queue_id && queue) {
     return (
       <div className="min-h-screen p-8" 
-           dir={language === "he" ? "rtl" : "ltr"}
+           dir={language === "he" || language === "ar" ? "rtl" : "ltr"}
            style={{ backgroundColor: '#E6F9EA' }}>
         
         <LanguageSelector />
@@ -709,7 +780,7 @@ export default function Kiosk() {
 
         {/* SMS Dialog */}
         <Dialog open={smsDialog} onOpenChange={setSmsDialog}>
-          <DialogContent dir={language === "he" ? "rtl" : "ltr"} className="bg-white max-w-md">
+          <DialogContent dir={language === "he" || language === "ar" ? "rtl" : "ltr"} className="bg-white max-w-md">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
                 {t.smsDialogTitle}
