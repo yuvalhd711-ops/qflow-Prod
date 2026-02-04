@@ -539,7 +539,7 @@ export default function Kiosk() {
   }
 
   const LanguageSelector = () => {
-    const [showDropdown, setShowDropdown] = React.useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
     
     return (
       <div className="fixed top-6 left-6 z-50">
