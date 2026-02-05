@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Clock, Users, Award, Download, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Users, Award, Download, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,8 @@ export default function Reports() {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [selectedQueue, setSelectedQueue] = useState("all");
   const [dateRange, setDateRange] = useState("today");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   useEffect(() => {
     loadData();
@@ -51,7 +53,16 @@ export default function Reports() {
     
     // Date range filter
     const now = new Date();
-    if (dateRange === "today") {
+    if (dateRange === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(t => {
+        const d = new Date(t.created_date);
+        return d >= start && d <= end;
+      });
+    } else if (dateRange === "today") {
       const todayStart = new Date(now);
       todayStart.setHours(0, 0, 0, 0);
       filtered = filtered.filter(t => new Date(t.created_date) >= todayStart);
@@ -244,6 +255,7 @@ export default function Reports() {
                     <SelectItem value="yesterday">אתמול</SelectItem>
                     <SelectItem value="week">שבוע אחרון</SelectItem>
                     <SelectItem value="month">חודש אחרון</SelectItem>
+                    <SelectItem value="custom">מותאם אישית</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -295,6 +307,52 @@ export default function Reports() {
                 </Select>
               </div>
             </div>
+
+            {/* Custom Date Range Inputs */}
+            {dateRange === "custom" && (
+              <div className="grid md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">מתאריך:</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    style={{ borderColor: '#41B649' }}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">עד תאריך:</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    style={{ borderColor: '#41B649' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Clear Custom Dates */}
+            {dateRange === "custom" && customStartDate && customEndDate && (
+              <div className="mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCustomStartDate("");
+                    setCustomEndDate("");
+                    setDateRange("today");
+                  }}
+                  className="gap-2"
+                  style={{ borderColor: '#E52521', color: '#E52521' }}
+                >
+                  <X className="h-4 w-4" />
+                  נקה טווח מותאם
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -302,7 +360,15 @@ export default function Reports() {
         <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl" style={{ borderColor: '#41B649', borderWidth: '3px' }}>
           <CardHeader style={{ backgroundColor: '#E6F9EA', borderBottom: '2px solid #41B649' }}>
             <CardTitle className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
-              📊 סיכום פעילות – {dateRange === "today" ? "היום" : dateRange === "yesterday" ? "אתמול" : dateRange === "week" ? "שבוע אחרון" : "חודש אחרון"}
+              📊 סיכום פעילות – {
+                dateRange === "today" ? "היום" : 
+                dateRange === "yesterday" ? "אתמול" : 
+                dateRange === "week" ? "שבוע אחרון" : 
+                dateRange === "month" ? "חודש אחרון" :
+                dateRange === "custom" && customStartDate && customEndDate ? 
+                  `${moment(customStartDate).format('DD/MM/YY')} - ${moment(customEndDate).format('DD/MM/YY')}` :
+                  "טווח מותאם"
+              }
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
