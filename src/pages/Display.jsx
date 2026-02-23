@@ -17,6 +17,15 @@ export default function Display() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [currentTime, setCurrentTime] = useState(moment().format('HH:mm:ss'));
   const [currentDate, setCurrentDate] = useState(moment().format('DD/MM/YYYY'));
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  const marketingMessages = [
+    { title: "ברוכים הבאים לשוק העיר!", text: "איכות ושירות ללא פשרות" },
+    { title: "🛒 מבצעים חמים!", text: "עקבו אחר המבצעים שלנו בכל סניף" },
+    { title: "🥩 קצביית פרימיום", text: "בשר טרי מהמשובחים בשוק" },
+    { title: "🐟 מעדניית דגים", text: "דגים טריים מדי יום" },
+    { title: "💚 הצטרפו למועדון הלקוחות", text: "הטבות ומבצעים בלעדיים" }
+  ];
 
   // Get URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -78,11 +87,15 @@ export default function Display() {
           .sort((a, b) => a.ticket_number - b.ticket_number)
           .slice(0, 3);
         
+        // Calculate estimated wait time
+        const avgServiceTime = queue.avg_service_time_seconds || 180; // Default 3 minutes
+        
         newDeptData[queue.name] = {
           queueId: queue.id,
           queueName: queue.name,
           current: current || null,
-          upcoming: upcoming
+          upcoming: upcoming,
+          avgServiceTime: avgServiceTime
         };
       }
       
@@ -142,6 +155,14 @@ export default function Display() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Rotate marketing messages every 8 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % marketingMessages.length);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [marketingMessages.length]);
 
   // Polling and real-time updates
   useEffect(() => {
@@ -282,12 +303,15 @@ export default function Display() {
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
                 alt="שוק העיר"
-                className="h-24 w-auto mx-auto mb-4"
+                className="h-32 w-auto mx-auto mb-4"
               />
-              <h1 className="text-6xl font-bold mb-2" style={{ color: '#1F5F25' }}>
-                {currentBranch?.name}
+              <h1 className="text-7xl font-black mb-3" style={{ color: '#1F5F25', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
+                שוק העיר
               </h1>
-              <p className="text-2xl font-semibold text-gray-700">מסך תצוגת תורים</p>
+              <h2 className="text-5xl font-bold mb-2" style={{ color: '#E52521' }}>
+                {currentBranch?.name}
+              </h2>
+              <p className="text-3xl font-semibold" style={{ color: '#41B649' }}>מסך תצוגת תורים</p>
             </div>
 
             {/* Audio Status - Right Side */}
@@ -313,20 +337,90 @@ export default function Display() {
           </div>
         </motion.div>
 
-        {/* Department Cards */}
-        <AnimatePresence mode="wait">
-          {Object.keys(deptData).length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-20"
-            >
-              <p className="text-3xl text-gray-500">אין מחלקות פעילות כרגע</p>
-            </motion.div>
-          ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
+        {/* Main Content Grid: Marketing Panel + Department Cards */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Marketing Panel - Left Side */}
+          <div className="col-span-3">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentMessageIndex}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                transition={{ duration: 0.8 }}
+                className="sticky top-6"
+              >
+                <Card 
+                  className="bg-gradient-to-br from-white to-gray-50 shadow-2xl" 
+                  style={{ borderColor: '#41B649', borderWidth: '4px' }}
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="mb-6">
+                      <div className="text-6xl mb-4">
+                        {currentMessageIndex === 0 ? '🌟' : 
+                         currentMessageIndex === 1 ? '🛒' :
+                         currentMessageIndex === 2 ? '🥩' :
+                         currentMessageIndex === 3 ? '🐟' : '💚'}
+                      </div>
+                      <h3 className="text-4xl font-black mb-6" style={{ color: '#1F5F25' }}>
+                        {marketingMessages[currentMessageIndex].title}
+                      </h3>
+                      <p className="text-2xl font-semibold text-gray-700 leading-relaxed">
+                        {marketingMessages[currentMessageIndex].text}
+                      </p>
+                    </div>
+                    
+                    {/* Progress Dots */}
+                    <div className="flex justify-center gap-2 mt-8">
+                      {marketingMessages.map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="w-3 h-3 rounded-full transition-all duration-300"
+                          style={{ 
+                            backgroundColor: idx === currentMessageIndex ? '#41B649' : '#D1D5DB'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Additional Info Card */}
+                <Card 
+                  className="bg-white shadow-xl mt-6" 
+                  style={{ borderColor: '#E52521', borderWidth: '3px' }}
+                >
+                  <CardContent className="p-6 text-center">
+                    <p className="text-xl font-bold mb-2" style={{ color: '#E52521' }}>
+                      שעות פתיחה
+                    </p>
+                    <p className="text-lg text-gray-700">
+                      ראשון - חמישי: 8:00 - 22:00
+                    </p>
+                    <p className="text-lg text-gray-700">
+                      שישי - שבת: 8:00 - 15:00
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Department Cards - Right Side */}
+          <div className="col-span-9">
+            <AnimatePresence mode="wait">
+              {Object.keys(deptData).length === 0 ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-20"
+                >
+                  <p className="text-3xl text-gray-500">אין מחלקות פעילות כרגע</p>
+                </motion.div>
+              ) : (
+                <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {Object.entries(deptData).map(([deptName, data], index) => (
                 <motion.div
                   key={deptName}
@@ -341,7 +435,7 @@ export default function Display() {
                   >
                     {/* Department Header */}
                     <CardHeader style={{ backgroundColor: '#E6F9EA', borderBottom: '3px solid #41B649' }}>
-                      <CardTitle className="text-4xl font-extrabold text-center py-2" style={{ color: '#1F5F25' }}>
+                      <CardTitle className="text-5xl font-black text-center py-4" style={{ color: '#1F5F25', textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         {deptName}
                       </CardTitle>
                     </CardHeader>
@@ -359,52 +453,63 @@ export default function Display() {
                             ]
                           }}
                           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="mb-8 p-10 rounded-3xl text-center relative overflow-hidden"
+                          className="mb-6 p-8 rounded-3xl text-center relative overflow-hidden"
                           style={{ backgroundColor: '#E52521' }}
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
-                          <p className="text-white text-3xl mb-4 font-bold tracking-wide">תור נוכחי</p>
-                          <p className="text-white text-9xl font-black leading-none relative z-10" style={{ textShadow: '0 4px 8px rgba(0,0,0,0.3)' }}>
+                          <p className="text-white text-3xl mb-3 font-bold tracking-wide">תור נוכחי</p>
+                          <p className="text-white text-8xl font-black leading-none relative z-10" style={{ textShadow: '0 4px 8px rgba(0,0,0,0.3)' }}>
                             {String(data.current.ticket_number).padStart(3, '0')}
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="mb-8 p-10 rounded-3xl text-center bg-gradient-to-br from-gray-100 to-gray-200">
-                          <p className="text-gray-500 text-3xl font-semibold">אין תור נוכחי</p>
+                        <div className="mb-6 p-8 rounded-3xl text-center bg-gradient-to-br from-gray-100 to-gray-200">
+                          <p className="text-gray-500 text-2xl font-semibold">אין תור נוכחי</p>
                         </div>
                       )}
                       
                       {/* Upcoming Tickets */}
                       <div>
-                        <h3 className="text-2xl font-bold mb-4 text-center" style={{ color: '#1F5F25' }}>
+                        <h3 className="text-2xl font-bold mb-3 text-center" style={{ color: '#1F5F25' }}>
                           תורים ממתינים
                         </h3>
                         {data.upcoming.length === 0 ? (
-                          <div className="text-center py-6">
+                          <div className="text-center py-4">
                             <p className="text-gray-500 text-lg">אין תורים ממתינים</p>
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            {data.upcoming.map((ticket, idx) => (
-                              <motion.div
-                                key={ticket.id}
-                                initial={{ x: -30, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.3 + idx * 0.15, type: "spring" }}
-                                className="flex items-center gap-4 p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-                                style={{ backgroundColor: '#E6F9EA' }}
-                              >
-                                <div 
-                                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
-                                  style={{ backgroundColor: '#41B649' }}
+                          <div className="space-y-2">
+                            {data.upcoming.map((ticket, idx) => {
+                              const estimatedWaitMinutes = Math.ceil((idx + 1) * data.avgServiceTime / 60);
+                              return (
+                                <motion.div
+                                  key={ticket.id}
+                                  initial={{ x: -30, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.3 + idx * 0.15, type: "spring" }}
+                                  className="flex items-center justify-between gap-3 p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+                                  style={{ backgroundColor: '#E6F9EA' }}
                                 >
-                                  <span className="text-white font-black text-lg">{idx + 1}</span>
-                                </div>
-                                <span className="text-4xl font-extrabold" style={{ color: '#1F5F25' }}>
-                                  {String(ticket.ticket_number).padStart(3, '0')}
-                                </span>
-                              </motion.div>
-                            ))}
+                                  <div className="flex items-center gap-3">
+                                    <div 
+                                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md"
+                                      style={{ backgroundColor: '#41B649' }}
+                                    >
+                                      <span className="text-white font-black text-base">{idx + 1}</span>
+                                    </div>
+                                    <span className="text-4xl font-extrabold" style={{ color: '#1F5F25' }}>
+                                      {String(ticket.ticket_number).padStart(3, '0')}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ backgroundColor: 'white' }}>
+                                    <Clock className="w-4 h-4" style={{ color: '#41B649' }} />
+                                    <span className="text-sm font-bold" style={{ color: '#1F5F25' }}>
+                                      ~{estimatedWaitMinutes} דק׳
+                                    </span>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -412,9 +517,11 @@ export default function Display() {
                   </Card>
                 </motion.div>
               ))}
-            </div>
-          )}
-        </AnimatePresence>
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
 
         {/* Audio Prompt */}
         {promptAudio && (
