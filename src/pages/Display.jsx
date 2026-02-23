@@ -43,10 +43,8 @@ export default function Display() {
   // Ref to track previous tickets across re-renders
   const previousTicketsRef = useRef({});
   
-  // Audio unlock and voices ready state
-  const audioUnlockedRef = useRef(false);
-  const voicesReadyRef = useRef(false);
-  const audioContextRef = useRef(null);
+  // Audio element for TTS playback
+  const audioRef = useRef(null);
 
   // Load branches
   const loadBranches = useCallback(async () => {
@@ -121,117 +119,80 @@ export default function Display() {
     }
   }, []);
 
-  // Hebrew speech synthesis with robust fallback
+  // Hebrew TTS using pre-recorded audio via Google Translate API
   const speakHebrew = useCallback((text) => {
     if (!audioEnabled) {
-      console.log('[Speech] Audio disabled, skipping');
-      return;
-    }
-    
-    console.log('[Speech] ===== SPEAK CALLED =====');
-    console.log('[Speech] Text:', text);
-    console.log('[Speech] Audio unlocked:', audioUnlockedRef.current);
-    console.log('[Speech] Voices ready:', voicesReadyRef.current);
-    
-    // Check if speechSynthesis exists
-    if (!window.speechSynthesis) {
-      console.error('[Speech] speechSynthesis not supported, using fallback');
-      setDebugInfo(prev => ({ ...prev, speechSynthSupported: false, fallbackTriggered: true }));
-      playFallbackSound();
+      console.log('[TTS] Audio disabled, skipping');
       return;
     }
 
-    setDebugInfo(prev => ({ ...prev, speechSynthSupported: true, lastAttempt: text }));
+    console.log('[TTS] Playing audio:', text);
+    setDebugInfo(prev => ({ 
+      ...prev, 
+      speechSynthSupported: true,
+      voicesLoaded: true,
+      selectedVoice: 'Google Translate TTS (he-IL)',
+      lastAttempt: text,
+      fallbackTriggered: false
+    }));
 
     try {
-      // Cancel any ongoing speech
-      console.log('[Speech] Cancelling previous speech...');
-      window.speechSynthesis.cancel();
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
 
-      // Wait longer before speaking (300ms for stability)
-      setTimeout(() => {
-        try {
-          const voices = window.speechSynthesis.getVoices();
-          console.log('[Speech] Available voices count:', voices.length);
+      // Create new audio element if needed
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
 
-          if (voices.length === 0) {
-            console.error('[Speech] No voices available, using fallback');
-            setDebugInfo(prev => ({ ...prev, voicesLoaded: false, fallbackTriggered: true }));
-            playFallbackSound();
-            return;
-          }
+      // Encode text for URL
+      const encodedText = encodeURIComponent(text);
 
-          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
+      // Google Translate TTS URL (free, no auth required)
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q=${encodedText}`;
 
-          const utterance = new SpeechSynthesisUtterance(text);
+      audioRef.current.src = ttsUrl;
+      audioRef.current.volume = 1.0;
 
-          // AGGRESSIVE VOICE SELECTION:
-          // 1. Try Hebrew voice
-          let selectedVoice = voices.find(v => 
-            v.lang.includes('he-IL') || v.lang.includes('he') || v.name.includes('Hebrew')
-          );
+      audioRef.current.onloadeddata = () => {
+        console.log('[TTS] Audio loaded successfully');
+      };
 
-          // 2. Try Google voice
-          if (!selectedVoice) {
-            selectedVoice = voices.find(v => v.name.includes('Google'));
-          }
+      audioRef.current.onplay = () => {
+        console.log('[TTS] Audio playback STARTED');
+      };
 
-          // 3. FALLBACK: Use FIRST available voice (any language)
-          if (!selectedVoice) {
-            selectedVoice = voices[0];
-            console.warn('[Speech] No Hebrew/Google voice, using first available:', selectedVoice.name);
-          }
+      audioRef.current.onended = () => {
+        console.log('[TTS] Audio playback ENDED');
+      };
 
-          if (selectedVoice) {
-            utterance.voice = selectedVoice;
-            setDebugInfo(prev => ({ 
-              ...prev, 
-              selectedVoice: `${selectedVoice.name} (${selectedVoice.lang})` 
-            }));
-            console.log('[Speech] Selected voice:', selectedVoice.name, selectedVoice.lang);
-          }
+      audioRef.current.onerror = (error) => {
+        console.error('[TTS] Audio playback ERROR:', error);
+        setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
+        playFallbackSound();
+      };
 
-          utterance.lang = 'he-IL';
-          utterance.rate = 0.85;
-          utterance.pitch = 1.0;
-          utterance.volume = 1.0;
+      // Play the audio
+      const playPromise = audioRef.current.play();
 
-          utterance.onstart = () => {
-            console.log('[Speech] Speech STARTED');
-            setDebugInfo(prev => ({ ...prev, fallbackTriggered: false }));
-          };
-
-          utterance.onend = () => {
-            console.log('[Speech] Speech ENDED');
-          };
-
-          utterance.onerror = (event) => {
-            console.error('[Speech] Speech ERROR:', event.error, event);
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('[TTS] Audio play promise resolved');
+          })
+          .catch(error => {
+            console.error('[TTS] Audio play promise rejected:', error);
             setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
             playFallbackSound();
-          };
+          });
+      }
 
-          console.log('[Speech] Calling speak()...');
-          window.speechSynthesis.speak(utterance);
-
-          // Check if speaking started (wait longer - 500ms)
-          setTimeout(() => {
-            if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
-              console.error('[Speech] speak() did not start, using fallback');
-              setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
-              playFallbackSound();
-            }
-          }, 500);
-
-        } catch (innerError) {
-          console.error('[Speech] Inner speak error:', innerError);
-          setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
-          playFallbackSound();
-        }
-      }, 300);
-      
     } catch (error) {
-      console.error('[Speech] Outer speak error:', error);
+      console.error('[TTS] Error playing audio:', error);
+      setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
       playFallbackSound();
     }
   }, [audioEnabled]);
@@ -240,25 +201,21 @@ export default function Display() {
   const playFallbackSound = useCallback(() => {
     console.log('[Fallback] Playing fallback sound');
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(audioContext.destination);
       
       oscillator.frequency.value = 800;
       oscillator.type = 'sine';
       
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
       
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
       
       console.log('[Fallback] Fallback sound played');
     } catch (error) {
@@ -268,92 +225,24 @@ export default function Display() {
 
   // Audio unlock on mount
   useEffect(() => {
-    console.log('[Audio Init] Starting audio unlock process...');
-    
-    const unlockAudio = async () => {
-      try {
-        // Create AudioContext
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-          console.log('[Audio Init] AudioContext created');
-        }
-        
-        // Resume if suspended
-        if (audioContextRef.current.state === 'suspended') {
-          await audioContextRef.current.resume();
-          console.log('[Audio Init] AudioContext resumed');
-        }
-        
-        // Play silent sound to unlock
-        const oscillator = audioContextRef.current.createOscillator();
-        const gainNode = audioContextRef.current.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContextRef.current.destination);
-        gainNode.gain.value = 0.001;
-        oscillator.start(audioContextRef.current.currentTime);
-        oscillator.stop(audioContextRef.current.currentTime + 0.001);
-        console.log('[Audio Init] Silent sound played');
-        
-        // Initialize speechSynthesis
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          const voices = window.speechSynthesis.getVoices();
-          console.log('[Audio Init] Initial voices:', voices.length);
+    console.log('[Audio Init] Initializing TTS audio system...');
 
-          if (voices.length > 0) {
-            voicesReadyRef.current = true;
-            setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
-            console.log('[Audio Init] Voices ready immediately');
-          }
-        }
-        
-        audioUnlockedRef.current = true;
-        console.log('[Audio Init] Audio unlocked successfully');
-        
-      } catch (error) {
-        console.error('[Audio Init] Unlock error:', error);
-      }
-    };
-    
-    // Try immediate unlock
-    unlockAudio();
-    
-    // Also try on first user interaction
-    const handleFirstClick = () => {
-      console.log('[Audio Init] First click detected, unlocking...');
-      unlockAudio();
-      document.removeEventListener('click', handleFirstClick);
-    };
-    document.addEventListener('click', handleFirstClick);
-    
-    // Wait for voices to load
-    if (window.speechSynthesis) {
-      const onVoicesChanged = () => {
-        const voices = window.speechSynthesis.getVoices();
-        console.log('[Audio Init] Voices changed, count:', voices.length);
-        if (voices.length > 0) {
-          voicesReadyRef.current = true;
-          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
-          console.log('[Audio Init] Voices ready');
-        }
-      };
-      
-      window.speechSynthesis.onvoiceschanged = onVoicesChanged;
-      
-      // Also try immediate check
-      setTimeout(() => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          voicesReadyRef.current = true;
-          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
-          console.log('[Audio Init] Voices ready after timeout');
-        }
-      }, 500);
+    // Initialize audio element
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      console.log('[Audio Init] Audio element created');
     }
-    
-    return () => {
-      document.removeEventListener('click', handleFirstClick);
-    };
+
+    // Set initial debug info
+    setDebugInfo({
+      speechSynthSupported: true,
+      voicesLoaded: true,
+      selectedVoice: 'Google Translate TTS (he-IL)',
+      lastAttempt: '',
+      fallbackTriggered: false
+    });
+
+    console.log('[Audio Init] TTS system ready');
   }, []);
   
   // Listen to ticket call events from localStorage
