@@ -215,11 +215,7 @@ export default function Display() {
     window.location.href = window.location.pathname + "?branch_id=" + branchId;
   };
 
-  const handleEnableAudio = () => {
-    setAudioEnabled(true);
-    setPromptAudio(false);
-    speakHebrew("מערכת הקראות קולית הופעלה");
-  };
+
 
   if (loading) {
     return (
