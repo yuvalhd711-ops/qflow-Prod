@@ -17,6 +17,15 @@ export default function Display() {
   const [currentTime, setCurrentTime] = useState(moment().format('HH:mm:ss'));
   const [currentDate, setCurrentDate] = useState(moment().format('DD/MM/YYYY'));
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  
+  // Debug info for display
+  const [debugInfo, setDebugInfo] = useState({
+    speechSynthSupported: false,
+    voicesLoaded: false,
+    selectedVoice: 'None',
+    lastAttempt: '',
+    fallbackTriggered: false
+  });
 
   const marketingMessages = [
     { title: "ברוכים הבאים לשוק העיר!", text: "איכות ושירות ללא פשרות" },
@@ -127,89 +136,99 @@ export default function Display() {
     // Check if speechSynthesis exists
     if (!window.speechSynthesis) {
       console.error('[Speech] speechSynthesis not supported, using fallback');
+      setDebugInfo(prev => ({ ...prev, speechSynthSupported: false, fallbackTriggered: true }));
       playFallbackSound();
       return;
     }
-    
-    // Wait for voices to be ready
-    if (!voicesReadyRef.current) {
-      console.warn('[Speech] Voices not ready yet, attempting anyway...');
-    }
-    
+
+    setDebugInfo(prev => ({ ...prev, speechSynthSupported: true, lastAttempt: text }));
+
     try {
       // Cancel any ongoing speech
       console.log('[Speech] Cancelling previous speech...');
       window.speechSynthesis.cancel();
-      
-      // Wait a bit before speaking
+
+      // Wait longer before speaking (300ms for stability)
       setTimeout(() => {
         try {
           const voices = window.speechSynthesis.getVoices();
           console.log('[Speech] Available voices count:', voices.length);
-          
+
           if (voices.length === 0) {
             console.error('[Speech] No voices available, using fallback');
+            setDebugInfo(prev => ({ ...prev, voicesLoaded: false, fallbackTriggered: true }));
             playFallbackSound();
             return;
           }
-          
+
+          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
+
           const utterance = new SpeechSynthesisUtterance(text);
-          
-          // Try to find Hebrew voice
-          let hebrewVoice = voices.find(v => 
+
+          // AGGRESSIVE VOICE SELECTION:
+          // 1. Try Hebrew voice
+          let selectedVoice = voices.find(v => 
             v.lang.includes('he-IL') || v.lang.includes('he') || v.name.includes('Hebrew')
           );
-          
-          // Try Google voices if available
-          if (!hebrewVoice) {
-            hebrewVoice = voices.find(v => v.name.includes('Google'));
+
+          // 2. Try Google voice
+          if (!selectedVoice) {
+            selectedVoice = voices.find(v => v.name.includes('Google'));
           }
-          
-          // Fallback to first voice
-          if (!hebrewVoice && voices.length > 0) {
-            hebrewVoice = voices[0];
-            console.warn('[Speech] Using first available voice:', hebrewVoice.name);
+
+          // 3. FALLBACK: Use FIRST available voice (any language)
+          if (!selectedVoice) {
+            selectedVoice = voices[0];
+            console.warn('[Speech] No Hebrew/Google voice, using first available:', selectedVoice.name);
           }
-          
-          if (hebrewVoice) {
-            utterance.voice = hebrewVoice;
-            console.log('[Speech] Selected voice:', hebrewVoice.name, hebrewVoice.lang);
+
+          if (selectedVoice) {
+            utterance.voice = selectedVoice;
+            setDebugInfo(prev => ({ 
+              ...prev, 
+              selectedVoice: `${selectedVoice.name} (${selectedVoice.lang})` 
+            }));
+            console.log('[Speech] Selected voice:', selectedVoice.name, selectedVoice.lang);
           }
-          
+
           utterance.lang = 'he-IL';
           utterance.rate = 0.85;
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
-          
+
           utterance.onstart = () => {
             console.log('[Speech] Speech STARTED');
+            setDebugInfo(prev => ({ ...prev, fallbackTriggered: false }));
           };
-          
+
           utterance.onend = () => {
             console.log('[Speech] Speech ENDED');
           };
-          
+
           utterance.onerror = (event) => {
             console.error('[Speech] Speech ERROR:', event.error, event);
+            setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
             playFallbackSound();
           };
-          
+
           console.log('[Speech] Calling speak()...');
           window.speechSynthesis.speak(utterance);
-          
-          // Check if speaking started
+
+          // Check if speaking started (wait longer - 500ms)
           setTimeout(() => {
             if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
               console.error('[Speech] speak() did not start, using fallback');
+              setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
               playFallbackSound();
             }
-          }, 200);
-          
+          }, 500);
+
         } catch (innerError) {
           console.error('[Speech] Inner speak error:', innerError);
+          setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
           playFallbackSound();
         }
-      }, 100);
+      }, 300);
       
     } catch (error) {
       console.error('[Speech] Outer speak error:', error);
@@ -280,9 +299,10 @@ export default function Display() {
           window.speechSynthesis.cancel();
           const voices = window.speechSynthesis.getVoices();
           console.log('[Audio Init] Initial voices:', voices.length);
-          
+
           if (voices.length > 0) {
             voicesReadyRef.current = true;
+            setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
             console.log('[Audio Init] Voices ready immediately');
           }
         }
@@ -313,6 +333,7 @@ export default function Display() {
         console.log('[Audio Init] Voices changed, count:', voices.length);
         if (voices.length > 0) {
           voicesReadyRef.current = true;
+          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
           console.log('[Audio Init] Voices ready');
         }
       };
@@ -324,6 +345,7 @@ export default function Display() {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           voicesReadyRef.current = true;
+          setDebugInfo(prev => ({ ...prev, voicesLoaded: true }));
           console.log('[Audio Init] Voices ready after timeout');
         }
       }, 500);
@@ -541,22 +563,56 @@ export default function Display() {
               <p className="text-3xl font-semibold" style={{ color: '#41B649' }}>מסך תצוגת תורים</p>
             </div>
 
-            {/* Audio Status - Right Side */}
+            {/* Audio Status + Debug Info - Right Side */}
             <div className="flex-1 text-left">
-              <div className="inline-flex flex-col items-start bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#41B649', borderWidth: '3px', borderStyle: 'solid' }}>
+              <div className="inline-flex flex-col items-start bg-white rounded-2xl shadow-lg p-4" style={{ borderColor: '#41B649', borderWidth: '3px', borderStyle: 'solid' }}>
                 {audioEnabled ? (
                   <>
-                    <Volume2 className="w-8 h-8 mb-2" style={{ color: '#41B649' }} />
-                    <span className="text-lg font-semibold" style={{ color: '#41B649' }}>הקראות קוליות</span>
-                    <span className="text-sm font-medium" style={{ color: '#41B649' }}>מופעלות</span>
+                    <Volume2 className="w-6 h-6 mb-2" style={{ color: '#41B649' }} />
+                    <span className="text-base font-semibold" style={{ color: '#41B649' }}>הקראות קוליות מופעלות</span>
                   </>
                 ) : (
                   <>
-                    <VolumeX className="w-8 h-8 mb-2 text-gray-500" />
-                    <span className="text-lg font-semibold text-gray-500">הקראות קוליות</span>
-                    <span className="text-sm font-medium text-gray-500">כבויות</span>
+                    <VolumeX className="w-6 h-6 mb-2 text-gray-500" />
+                    <span className="text-base font-semibold text-gray-500">הקראות כבויות</span>
                   </>
                 )}
+
+                {/* Debug Info */}
+                <div className="mt-3 pt-3 border-t w-full text-xs space-y-1" style={{ borderColor: '#E6F9EA' }}>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">API:</span>
+                    <span className={debugInfo.speechSynthSupported ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                      {debugInfo.speechSynthSupported ? '✓ Supported' : '✗ Not Supported'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Voices:</span>
+                    <span className={debugInfo.voicesLoaded ? 'text-green-600 font-semibold' : 'text-orange-600 font-semibold'}>
+                      {debugInfo.voicesLoaded ? '✓ Loaded' : '⏳ Loading'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-600">Voice:</span>
+                    <span className="text-gray-800 font-mono text-[10px] truncate" title={debugInfo.selectedVoice}>
+                      {debugInfo.selectedVoice}
+                    </span>
+                  </div>
+                  {debugInfo.lastAttempt && (
+                    <div className="flex flex-col">
+                      <span className="text-gray-600">Last:</span>
+                      <span className="text-gray-800 font-mono text-[10px] truncate" title={debugInfo.lastAttempt}>
+                        {debugInfo.lastAttempt}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fallback:</span>
+                    <span className={debugInfo.fallbackTriggered ? 'text-orange-600 font-semibold' : 'text-green-600 font-semibold'}>
+                      {debugInfo.fallbackTriggered ? '⚠ Yes' : '✓ No'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
