@@ -107,7 +107,7 @@ export default function Display() {
 
   // Hebrew speech synthesis
   const speakHebrew = useCallback((text) => {
-    if (!audioEnabled || !enableAnnouncements) return;
+    if (!audioEnabled) return;
     
     try {
       window.speechSynthesis.cancel();
