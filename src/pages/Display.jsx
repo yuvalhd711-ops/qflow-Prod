@@ -209,13 +209,7 @@ export default function Display() {
     }
   });
 
-  // Show audio prompt on first interaction
-  useEffect(() => {
-    if (!audioEnabled && branch_id) {
-      const timer = setTimeout(() => setPromptAudio(true), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [audioEnabled, branch_id]);
+
 
   const handleBranchSelect = (branchId) => {
     window.location.href = window.location.pathname + "?branch_id=" + branchId;
