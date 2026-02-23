@@ -337,23 +337,21 @@ export default function Display() {
 
             {/* Audio Status - Right Side */}
             <div className="flex-1 text-left">
-              {enableAnnouncements && (
-                <div className="inline-flex flex-col items-start bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#41B649', borderWidth: '3px', borderStyle: 'solid' }}>
-                  {audioEnabled ? (
-                    <>
-                      <Volume2 className="w-8 h-8 mb-2" style={{ color: '#41B649' }} />
-                      <span className="text-lg font-semibold" style={{ color: '#41B649' }}>הקראות קוליות</span>
-                      <span className="text-sm font-medium" style={{ color: '#41B649' }}>מופעלות</span>
-                    </>
-                  ) : (
-                    <>
-                      <VolumeX className="w-8 h-8 mb-2 text-gray-500" />
-                      <span className="text-lg font-semibold text-gray-500">הקראות קוליות</span>
-                      <span className="text-sm font-medium text-gray-500">כבויות</span>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="inline-flex flex-col items-start bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#41B649', borderWidth: '3px', borderStyle: 'solid' }}>
+                {audioEnabled ? (
+                  <>
+                    <Volume2 className="w-8 h-8 mb-2" style={{ color: '#41B649' }} />
+                    <span className="text-lg font-semibold" style={{ color: '#41B649' }}>הקראות קוליות</span>
+                    <span className="text-sm font-medium" style={{ color: '#41B649' }}>מופעלות</span>
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-8 h-8 mb-2 text-gray-500" />
+                    <span className="text-lg font-semibold text-gray-500">הקראות קוליות</span>
+                    <span className="text-sm font-medium text-gray-500">כבויות</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
