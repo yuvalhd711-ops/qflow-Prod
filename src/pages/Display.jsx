@@ -212,11 +212,11 @@ export default function Display() {
 
   // Show audio prompt on first interaction
   useEffect(() => {
-    if (enableAnnouncements && !audioEnabled && branch_id) {
+    if (!audioEnabled && branch_id) {
       const timer = setTimeout(() => setPromptAudio(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, [enableAnnouncements, audioEnabled, branch_id]);
+  }, [audioEnabled, branch_id]);
 
   const handleBranchSelect = (branchId) => {
     window.location.href = window.location.pathname + "?branch_id=" + branchId;
