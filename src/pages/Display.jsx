@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,9 @@ export default function Display() {
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
   const enableAnnouncements = true; // Always enabled for all branches
+
+  // Ref to track previous tickets across re-renders
+  const previousTicketsRef = useRef({});
 
   // Load branches
   const loadBranches = useCallback(async () => {
@@ -143,13 +146,10 @@ export default function Display() {
   useEffect(() => {
     if (!audioEnabled) return;
     
-    // Track previous tickets to detect changes
-    const previousTickets = {};
-    
     Object.entries(deptData).forEach(([deptName, data]) => {
       if (data.current) {
         const currentTicketNumber = data.current.ticket_number;
-        const prevTicketNumber = previousTickets[deptName];
+        const prevTicketNumber = previousTicketsRef.current[deptName];
         
         // Only announce if ticket changed (not on initial load)
         if (prevTicketNumber !== undefined && prevTicketNumber !== currentTicketNumber) {
@@ -157,7 +157,7 @@ export default function Display() {
           speakHebrew(text);
         }
         
-        previousTickets[deptName] = currentTicketNumber;
+        previousTicketsRef.current[deptName] = currentTicketNumber;
       }
     });
   }, [deptData, audioEnabled, speakHebrew]);
