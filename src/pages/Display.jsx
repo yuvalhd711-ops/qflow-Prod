@@ -142,7 +142,7 @@ export default function Display() {
 
   // Auto-announce when current ticket changes
   useEffect(() => {
-    if (!audioEnabled || !enableAnnouncements) return;
+    if (!audioEnabled) return;
     
     // Track previous tickets to detect changes
     const previousTickets = {};
