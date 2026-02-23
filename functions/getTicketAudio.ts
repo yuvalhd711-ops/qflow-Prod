@@ -1,36 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
     const { ticket_number } = await req.json();
 
     if (!ticket_number) {
       return Response.json({ error: 'ticket_number is required' }, { status: 400 });
     }
 
-    // Normalize ticket number to 3 digits (e.g., 24 -> "024")
-    const ticketNum = String(ticket_number).padStart(3, '0');
-    const fileName = `ticket_${ticketNum}.mp3`;
-
-    // Check if audio file already exists
-    try {
-      const existingFiles = await base44.asServiceRole.storage.listFiles();
-      const fileExists = existingFiles.some(f => f.name === fileName);
-
-      if (fileExists) {
-        // Return existing file URL
-        const fileUrl = await base44.asServiceRole.storage.getPublicUrl(fileName);
-        return Response.json({ audio_url: fileUrl });
-      }
-    } catch (err) {
-      console.log('File does not exist yet, will create:', err);
-    }
-
     // Generate audio file using Google Translate TTS
     const hebrewText = `מספר ${ticket_number}`;
     const encodedText = encodeURIComponent(hebrewText);
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q=${encodedText}`;
+
+    console.log('Fetching audio from:', ttsUrl);
 
     // Download the audio
     const audioResponse = await fetch(ttsUrl);
@@ -39,18 +20,12 @@ Deno.serve(async (req) => {
     }
 
     const audioArrayBuffer = await audioResponse.arrayBuffer();
-
-    // Upload to storage using SDK invoke
-    const uploadResult = await base44.asServiceRole.functions.invoke('uploadAudioFile', {
-      audioData: Array.from(new Uint8Array(audioArrayBuffer)),
-      fileName: fileName
-    });
-
-    const file_url = uploadResult.data.file_url;
+    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
+    const dataUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
     return Response.json({ 
-      audio_url: file_url,
-      ticket_number: ticketNum
+      audio_url: dataUrl,
+      ticket_number: String(ticket_number).padStart(3, '0')
     });
 
   } catch (error) {
