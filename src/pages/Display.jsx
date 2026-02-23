@@ -531,33 +531,7 @@ export default function Display() {
           </div>
         </div>
 
-        {/* Audio Prompt */}
-        {promptAudio && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="fixed bottom-4 left-4 bg-white p-4 rounded-lg shadow-xl z-50"
-            style={{ borderColor: '#41B649', borderWidth: '2px', borderStyle: 'solid' }}
-          >
-            <p className="mb-3 font-medium">האם להפעיל הקראות קוליות?</p>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleEnableAudio}
-                className="text-white"
-                style={{ backgroundColor: '#41B649' }}
-              >
-                <Volume2 className="w-4 h-4 ml-2" />
-                כן
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setPromptAudio(false)}
-              >
-                לא
-              </Button>
-            </div>
-          </motion.div>
-        )}
+
       </div>
     </div>
   );
