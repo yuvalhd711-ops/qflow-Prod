@@ -142,6 +142,29 @@ export default function Display() {
     return () => window.removeEventListener('storage', handleStorage);
   }, [enableAnnouncements, speakHebrew]);
 
+  // Auto-announce when current ticket changes
+  useEffect(() => {
+    if (!audioEnabled || !enableAnnouncements) return;
+    
+    // Track previous tickets to detect changes
+    const previousTickets = {};
+    
+    Object.entries(deptData).forEach(([deptName, data]) => {
+      if (data.current) {
+        const currentTicketNumber = data.current.ticket_number;
+        const prevTicketNumber = previousTickets[deptName];
+        
+        // Only announce if ticket changed (not on initial load)
+        if (prevTicketNumber !== undefined && prevTicketNumber !== currentTicketNumber) {
+          const text = `תור מספר ${String(currentTicketNumber).padStart(3, '0')} במחלקת ${deptName}`;
+          speakHebrew(text);
+        }
+        
+        previousTickets[deptName] = currentTicketNumber;
+      }
+    });
+  }, [deptData, audioEnabled, enableAnnouncements, speakHebrew]);
+
   // Initial load
   useEffect(() => {
     loadBranches();
