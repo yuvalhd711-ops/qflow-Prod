@@ -119,7 +119,7 @@ export default function Display() {
     }
   }, []);
 
-  // Hebrew TTS using pre-recorded audio via Google Translate API
+  // Hebrew TTS using ResponsiveVoice API
   const speakHebrew = useCallback((text) => {
     if (!audioEnabled) {
       console.log('[TTS] Audio disabled, skipping');
@@ -131,7 +131,7 @@ export default function Display() {
       ...prev, 
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'Google Translate TTS (he-IL)',
+      selectedVoice: 'ResponsiveVoice Hebrew',
       lastAttempt: text,
       fallbackTriggered: false
     }));
@@ -151,8 +151,8 @@ export default function Display() {
       // Encode text for URL
       const encodedText = encodeURIComponent(text);
 
-      // Google Translate TTS URL (free, no auth required)
-      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q=${encodedText}`;
+      // ResponsiveVoice API - free tier, works well on Android
+      const ttsUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodedText}&tl=he&sv=&vn=&pitch=0.5&rate=0.5&vol=1`;
 
       audioRef.current.src = ttsUrl;
       audioRef.current.volume = 1.0;
@@ -237,7 +237,7 @@ export default function Display() {
     setDebugInfo({
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'Google Translate TTS (he-IL)',
+      selectedVoice: 'ResponsiveVoice Hebrew',
       lastAttempt: '',
       fallbackTriggered: false
     });
