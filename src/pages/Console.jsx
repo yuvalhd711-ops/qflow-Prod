@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PhoneCall, CheckCircle, XCircle, SkipForward, ArrowRightLeft, RotateCcw, Volume2, Coffee, History, Search, Globe } from "lucide-react";
+import { PhoneCall, CheckCircle, XCircle, SkipForward, ArrowRightLeft, RotateCcw, Volume2, Coffee, History, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 
@@ -24,9 +24,6 @@ export default function Console() {
   const [transferDialog, setTransferDialog] = useState(false);
   const [targetDepartmentName, setTargetDepartmentName] = useState("");
   const [onBreak, setOnBreak] = useState(false);
-  const [searchSeq, setSearchSeq] = useState("");
-  const [searchMessage, setSearchMessage] = useState("");
-  const [foundTicket, setFoundTicket] = useState(null);
   const [historySearchSeq, setHistorySearchSeq] = useState("");
   const [language, setLanguage] = useState("he");
 
@@ -497,50 +494,7 @@ export default function Console() {
     }
   };
 
-  // Search ticket
-  const searchTicket = async () => {
-    if (!searchSeq || !queue_id) return;
-    
-    const allTickets = await base44.entities.Ticket.filter({ queue_id });
-    const ticket = allTickets.find(t => String(t.ticket_number) === String(searchSeq));
-    
-    if (ticket) {
-      setFoundTicket(ticket);
-      const statusLabels = {
-        he: { waiting: "ממתין", called: "נקרא", in_service: "בשירות", served: "טופל", skipped: "דולג", cancelled: "בוטל" },
-        en: { waiting: "Waiting", called: "Called", in_service: "In Service", served: "Served", skipped: "Skipped", cancelled: "Cancelled" },
-        ar: { waiting: "في الانتظار", called: "تم الاستدعاء", in_service: "قيد الخدمة", served: "تم الخدمة", skipped: "متخطى", cancelled: "ملغى" },
-        th: { waiting: "กำลังรอ", called: "ถูกเรียก", in_service: "กำลังให้บริการ", served: "ให้บริการแล้ว", skipped: "ข้าม", cancelled: "ยกเลิก" }
-      };
-      const statusText = statusLabels[language][ticket.state];
-      
-      setSearchMessage(`✓ תור ${ticket.ticket_number} נמצא (${statusText})`);
-    } else {
-      setSearchMessage(`✗ תור ${searchSeq} לא נמצא`);
-      setFoundTicket(null);
-    }
-  };
 
-  // Promote ticket
-  const promoteTicket = async () => {
-    if (!foundTicket || foundTicket.state !== "waiting") return;
-    
-    const allWaitingTickets = await base44.entities.Ticket.filter({ 
-      queue_id, 
-      state: "waiting" 
-    });
-    
-    const currentMinSeq = Math.min(...allWaitingTickets.map(t => t.ticket_number));
-    
-    await base44.entities.Ticket.update(foundTicket.id, {
-      ticket_number: currentMinSeq - 1
-    });
-    
-    setSearchSeq("");
-    setSearchMessage("");
-    setFoundTicket(null);
-    loadData();
-  };
 
   // Search history
   const searchHistoryTicket = () => {
@@ -781,55 +735,6 @@ export default function Console() {
           
           <TabsContent value="current">
             <div className="grid grid-cols-1 gap-3">
-              {/* Search and promote - מותאם לטאבלט */}
-              <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Search className="w-4 h-4" />
-                    {t.searchAndPromote}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder={t.enterTicketNumber}
-                      value={searchSeq}
-                      onChange={(e) => setSearchSeq(e.target.value)}
-                      className="flex-1 text-base h-9"
-                      dir="ltr"
-                    />
-                    <Button 
-                      onClick={searchTicket} 
-                      className="gap-1 text-white text-sm h-9"
-                      style={{ backgroundColor: '#41B649' }}
-                    >
-                      {t.search}
-                    </Button>
-                  </div>
-                  
-                  {searchMessage && (
-                    <div className={`p-2 rounded-lg mt-2 text-sm ${
-                      searchMessage.includes('✓') 
-                        ? 'bg-green-50 text-green-800' 
-                        : 'bg-red-50 text-red-800'
-                    }`}>
-                      {searchMessage}
-                    </div>
-                  )}
-                  
-                  {foundTicket && foundTicket.state === "waiting" && (
-                    <Button 
-                      onClick={promoteTicket} 
-                      className="w-full mt-2 text-white text-sm h-9"
-                      style={{ backgroundColor: '#E52521' }}
-                    >
-                      {t.promoteToTop}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Current ticket - מותאם לטאבלט */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
                 <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
