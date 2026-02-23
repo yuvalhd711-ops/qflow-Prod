@@ -47,14 +47,27 @@ Deno.serve(async (req) => {
           throw new Error(`TTS service failed for number ${i}`);
         }
 
-        const audioBlob = await audioResponse.blob();
-        const audioArrayBuffer = await audioBlob.arrayBuffer();
-        const audioFile = new Uint8Array(audioArrayBuffer);
+        const audioArrayBuffer = await audioResponse.arrayBuffer();
+        
+        // Write to temp file
+        const tempPath = `/tmp/ticket_${ticketNum}.mp3`;
+        await Deno.writeFile(tempPath, new Uint8Array(audioArrayBuffer));
+        
+        // Read and upload as file
+        const fileContent = await Deno.readFile(tempPath);
+        const blob = new Blob([fileContent], { type: 'audio/mpeg' });
+        const file = new File([blob], fileName, { type: 'audio/mpeg' });
 
         // Upload to storage
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({
-          file: audioFile
+          file: file
         });
+        
+        // Clean up temp file
+        try {
+          await Deno.remove(tempPath);
+        } catch {}
+
 
         results.push({ 
           number: i, 
@@ -65,8 +78,8 @@ Deno.serve(async (req) => {
         
         console.log(`✓ Created audio for number ${i}`);
         
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Delay to avoid rate limiting (both Google TTS and Base44 storage)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
       } catch (error) {
         console.error(`Error generating audio for number ${i}:`, error);
