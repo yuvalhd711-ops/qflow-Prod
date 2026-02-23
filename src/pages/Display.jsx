@@ -120,7 +120,7 @@ export default function Display() {
     } catch (error) {
       console.error('Speech error:', error);
     }
-  }, [audioEnabled, enableAnnouncements]);
+  }, [audioEnabled]);
 
   // Listen to ticket call events from localStorage
   useEffect(() => {
