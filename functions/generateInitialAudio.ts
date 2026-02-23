@@ -54,21 +54,13 @@ Deno.serve(async (req) => {
         const formData = new FormData();
         formData.append('file', blob, fileName);
 
-        // Upload to storage using direct fetch
-        const uploadResponse = await fetch(`https://api.base44.com/integrations/Core/UploadFile`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`
-          },
-          body: formData
+        // Upload to storage using SDK invoke
+        const uploadResult = await base44.asServiceRole.functions.invoke('uploadAudioFile', {
+          audioData: Array.from(new Uint8Array(audioArrayBuffer)),
+          fileName: fileName
         });
 
-        if (!uploadResponse.ok) {
-          throw new Error(`Upload failed: ${await uploadResponse.text()}`);
-        }
-
-        const uploadData = await uploadResponse.json();
-        const file_url = uploadData.file_url;
+        const file_url = uploadResult.data.file_url;
 
 
         results.push({ 
