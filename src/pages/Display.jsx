@@ -119,19 +119,21 @@ export default function Display() {
     }
   }, []);
 
-  // Hebrew TTS using ResponsiveVoice API
+  // Hebrew TTS using Google Translate API
   const speakHebrew = useCallback((text) => {
     if (!audioEnabled) {
       console.log('[TTS] Audio disabled, skipping');
       return;
     }
 
-    console.log('[TTS] Playing audio:', text);
+    console.log('[TTS] ===== ATTEMPTING PLAYBACK =====');
+    console.log('[TTS] Text:', text);
+
     setDebugInfo(prev => ({ 
       ...prev, 
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'ResponsiveVoice Hebrew',
+      selectedVoice: 'Google Translate TTS',
       lastAttempt: text,
       fallbackTriggered: false
     }));
@@ -139,6 +141,7 @@ export default function Display() {
     try {
       // Stop any currently playing audio
       if (audioRef.current) {
+        console.log('[TTS] Stopping previous audio');
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
@@ -146,52 +149,79 @@ export default function Display() {
       // Create new audio element if needed
       if (!audioRef.current) {
         audioRef.current = new Audio();
+        console.log('[TTS] Created new Audio element');
       }
 
       // Encode text for URL
       const encodedText = encodeURIComponent(text);
 
-      // ResponsiveVoice API - free tier, works well on Android
-      const ttsUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodedText}&tl=he&sv=&vn=&pitch=0.5&rate=0.5&vol=1`;
+      // Google Translate TTS - most reliable, works everywhere
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q=${encodedText}`;
+
+      console.log('[TTS] TTS URL:', ttsUrl);
 
       audioRef.current.src = ttsUrl;
       audioRef.current.volume = 1.0;
+      audioRef.current.crossOrigin = "anonymous";
+
+      audioRef.current.onloadstart = () => {
+        console.log('[TTS] ✓ Loading started');
+      };
+
+      audioRef.current.onloadedmetadata = () => {
+        console.log('[TTS] ✓ Metadata loaded');
+      };
 
       audioRef.current.onloadeddata = () => {
-        console.log('[TTS] Audio loaded successfully');
+        console.log('[TTS] ✓ Audio data loaded');
+      };
+
+      audioRef.current.oncanplay = () => {
+        console.log('[TTS] ✓ Can play');
       };
 
       audioRef.current.onplay = () => {
-        console.log('[TTS] Audio playback STARTED');
+        console.log('[TTS] ✓✓✓ PLAYBACK STARTED ✓✓✓');
+        setDebugInfo(prev => ({ ...prev, fallbackTriggered: false }));
+      };
+
+      audioRef.current.onplaying = () => {
+        console.log('[TTS] ✓ Playing...');
       };
 
       audioRef.current.onended = () => {
-        console.log('[TTS] Audio playback ENDED');
+        console.log('[TTS] ✓ Playback ended');
       };
 
-      audioRef.current.onerror = (error) => {
-        console.error('[TTS] Audio playback ERROR:', error);
+      audioRef.current.onerror = (e) => {
+        console.error('[TTS] ✗✗✗ ERROR ✗✗✗');
+        console.error('[TTS] Error event:', e);
+        console.error('[TTS] Audio error code:', audioRef.current?.error?.code);
+        console.error('[TTS] Audio error message:', audioRef.current?.error?.message);
         setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
         playFallbackSound();
       };
 
-      // Play the audio
+      // Attempt to play
+      console.log('[TTS] Calling play()...');
       const playPromise = audioRef.current.play();
 
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('[TTS] Audio play promise resolved');
+            console.log('[TTS] ✓ Play promise RESOLVED');
           })
           .catch(error => {
-            console.error('[TTS] Audio play promise rejected:', error);
+            console.error('[TTS] ✗ Play promise REJECTED:', error);
             setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
             playFallbackSound();
           });
+      } else {
+        console.log('[TTS] Play returned undefined (old browser)');
       }
 
     } catch (error) {
-      console.error('[TTS] Error playing audio:', error);
+      console.error('[TTS] ✗ Exception:', error);
       setDebugInfo(prev => ({ ...prev, fallbackTriggered: true }));
       playFallbackSound();
     }
@@ -237,7 +267,7 @@ export default function Display() {
     setDebugInfo({
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'ResponsiveVoice Hebrew',
+      selectedVoice: 'Google Translate TTS',
       lastAttempt: '',
       fallbackTriggered: false
     });
