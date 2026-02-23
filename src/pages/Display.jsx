@@ -124,8 +124,6 @@ export default function Display() {
 
   // Listen to ticket call events from localStorage
   useEffect(() => {
-    if (!enableAnnouncements) return;
-    
     const handleStorage = (e) => {
       if (e.key === 'ticket_call_event' && e.newValue) {
         try {
