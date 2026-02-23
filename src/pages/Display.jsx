@@ -138,7 +138,7 @@ export default function Display() {
     
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, [enableAnnouncements, speakHebrew]);
+  }, [speakHebrew]);
 
   // Auto-announce when current ticket changes
   useEffect(() => {
