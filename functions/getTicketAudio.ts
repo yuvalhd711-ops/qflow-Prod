@@ -38,14 +38,26 @@ Deno.serve(async (req) => {
       throw new Error('Failed to generate audio from TTS service');
     }
 
-    const audioBlob = await audioResponse.blob();
-    const audioArrayBuffer = await audioBlob.arrayBuffer();
-    const audioFile = new Uint8Array(audioArrayBuffer);
+    const audioArrayBuffer = await audioResponse.arrayBuffer();
+    
+    // Write to temp file
+    const tempPath = `/tmp/ticket_${ticketNum}.mp3`;
+    await Deno.writeFile(tempPath, new Uint8Array(audioArrayBuffer));
+    
+    // Read and upload as file
+    const fileContent = await Deno.readFile(tempPath);
+    const blob = new Blob([fileContent], { type: 'audio/mpeg' });
+    const file = new File([blob], fileName, { type: 'audio/mpeg' });
 
     // Upload to storage
     const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({
-      file: audioFile
+      file: file
     });
+    
+    // Clean up temp file
+    try {
+      await Deno.remove(tempPath);
+    } catch {}
 
     return Response.json({ 
       audio_url: file_url,
