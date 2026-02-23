@@ -119,22 +119,22 @@ export default function Display() {
     }
   }, []);
 
-  // Hebrew TTS using Google Translate API
-  const speakHebrew = useCallback((text) => {
+  // Play pre-recorded audio for ticket number
+  const speakHebrew = useCallback(async (ticketNumber) => {
     if (!audioEnabled) {
       console.log('[TTS] Audio disabled, skipping');
       return;
     }
 
-    console.log('[TTS] ===== ATTEMPTING PLAYBACK =====');
-    console.log('[TTS] Text:', text);
+    console.log('[TTS] ===== PLAYING TICKET AUDIO =====');
+    console.log('[TTS] Ticket Number:', ticketNumber);
 
     setDebugInfo(prev => ({ 
       ...prev, 
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'Google Translate TTS',
-      lastAttempt: text,
+      selectedVoice: 'Pre-recorded Audio',
+      lastAttempt: `מספר ${ticketNumber}`,
       fallbackTriggered: false
     }));
 
@@ -146,23 +146,26 @@ export default function Display() {
         audioRef.current.currentTime = 0;
       }
 
+      // Get audio file from backend
+      console.log('[TTS] Fetching audio file from backend...');
+      const { data } = await base44.functions.invoke('getTicketAudio', { 
+        ticket_number: ticketNumber 
+      });
+
+      if (!data || !data.audio_url) {
+        throw new Error('No audio URL received');
+      }
+
+      console.log('[TTS] Audio URL:', data.audio_url);
+
       // Create new audio element if needed
       if (!audioRef.current) {
         audioRef.current = new Audio();
         console.log('[TTS] Created new Audio element');
       }
 
-      // Encode text for URL
-      const encodedText = encodeURIComponent(text);
-
-      // Google Translate TTS - most reliable, works everywhere
-      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q=${encodedText}`;
-
-      console.log('[TTS] TTS URL:', ttsUrl);
-
-      audioRef.current.src = ttsUrl;
+      audioRef.current.src = data.audio_url;
       audioRef.current.volume = 1.0;
-      audioRef.current.crossOrigin = "anonymous";
 
       audioRef.current.onloadstart = () => {
         console.log('[TTS] ✓ Loading started');
@@ -267,7 +270,7 @@ export default function Display() {
     setDebugInfo({
       speechSynthSupported: true,
       voicesLoaded: true,
-      selectedVoice: 'Google Translate TTS',
+      selectedVoice: 'Pre-recorded Audio',
       lastAttempt: '',
       fallbackTriggered: false
     });
@@ -281,8 +284,7 @@ export default function Display() {
       if (e.key === 'ticket_call_event' && e.newValue) {
         try {
           const event = JSON.parse(e.newValue);
-          const text = `תור מספר ${event.ticketSeq} במחלקת ${event.queueName}`;
-          speakHebrew(text);
+          speakHebrew(event.ticketSeq);
         } catch (error) {
           console.error('Error parsing call event:', error);
         }
@@ -309,8 +311,7 @@ export default function Display() {
         // Announce on any change OR on initial load if ticket exists
         if (prevTicketNumber !== currentTicketNumber) {
           console.log('[Ticket Detection] ✅ TICKET CHANGED - ANNOUNCING');
-          const text = `תור מספר ${String(currentTicketNumber).padStart(3, '0')} במחלקת ${deptName}`;
-          speakHebrew(text);
+          speakHebrew(currentTicketNumber);
         } else {
           console.log('[Ticket Detection] No change detected');
         }
