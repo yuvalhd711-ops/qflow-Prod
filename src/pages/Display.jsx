@@ -13,8 +13,7 @@ export default function Display() {
   const [activeDepartments, setActiveDepartments] = useState([]);
   const [deptData, setDeptData] = useState({});
   const [loading, setLoading] = useState(true);
-  const [promptAudio, setPromptAudio] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(moment().format('HH:mm:ss'));
   const [currentDate, setCurrentDate] = useState(moment().format('DD/MM/YYYY'));
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
