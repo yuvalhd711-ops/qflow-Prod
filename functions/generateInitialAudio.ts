@@ -48,25 +48,27 @@ Deno.serve(async (req) => {
         }
 
         const audioArrayBuffer = await audioResponse.arrayBuffer();
+        const blob = new Blob([audioArrayBuffer], { type: 'audio/mpeg' });
         
-        // Write to temp file
-        const tempPath = `/tmp/ticket_${ticketNum}.mp3`;
-        await Deno.writeFile(tempPath, new Uint8Array(audioArrayBuffer));
-        
-        // Read and upload as file
-        const fileContent = await Deno.readFile(tempPath);
-        const blob = new Blob([fileContent], { type: 'audio/mpeg' });
-        const file = new File([blob], fileName, { type: 'audio/mpeg' });
+        // Create FormData and append the file
+        const formData = new FormData();
+        formData.append('file', blob, fileName);
 
-        // Upload to storage
-        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({
-          file: file
+        // Upload to storage using direct fetch
+        const uploadResponse = await fetch(`https://api.base44.com/integrations/Core/UploadFile`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`
+          },
+          body: formData
         });
-        
-        // Clean up temp file
-        try {
-          await Deno.remove(tempPath);
-        } catch {}
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed: ${await uploadResponse.text()}`);
+        }
+
+        const uploadData = await uploadResponse.json();
+        const file_url = uploadData.file_url;
 
 
         results.push({ 
