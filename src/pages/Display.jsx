@@ -161,7 +161,7 @@ export default function Display() {
         previousTickets[deptName] = currentTicketNumber;
       }
     });
-  }, [deptData, audioEnabled, enableAnnouncements, speakHebrew]);
+  }, [deptData, audioEnabled, speakHebrew]);
 
   // Initial load
   useEffect(() => {
