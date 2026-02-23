@@ -30,7 +30,7 @@ export default function Display() {
   // Get URL params
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
-  const enableAnnouncements = urlParams.get('announce') === 'true';
+  const enableAnnouncements = true; // Always enabled for all branches
 
   // Load branches
   const loadBranches = useCallback(async () => {
