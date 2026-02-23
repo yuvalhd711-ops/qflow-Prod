@@ -410,6 +410,8 @@ export default function Kiosk() {
         setShowTicket(false);
         setCurrentTicket(null);
         localStorage.removeItem(lockKey);
+        // חזרה לבחירת מחלקה
+        window.location.href = createPageUrl("Kiosk") + `?branch_id=${branch_id}`;
       }, 5000);
       
     } catch (error) {
