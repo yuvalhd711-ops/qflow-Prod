@@ -731,80 +731,77 @@ export default function Console() {
 
   // Console screen
   return (
-    <div className="min-h-screen p-6" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
+    <div className="min-h-screen p-3" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-          <div className="flex-1 text-center">
+        {/* Header - מותאם לטאבלט */}
+        <div className="flex justify-between items-center gap-2 mb-3">
+          <div className="flex items-center gap-2">
             <img
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68dbe1252279022b9e191013/8866f21c5_SHuk_LOGO_HAYIR.png"
               alt="שוק העיר"
-              className="h-12 w-auto mx-auto mb-2"
+              className="h-10 w-auto"
             />
-            <h1 className="text-3xl font-bold" style={{ color: '#111111' }}>
-              {queue?.name}
-            </h1>
-            <p className="text-gray-600">{t.console}</p>
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: '#111111' }}>
+                {queue?.name}
+              </h1>
+              <p className="text-xs text-gray-600">{t.console}</p>
+            </div>
           </div>
           
-          <div className="flex gap-2 flex-wrap justify-center">
+          <div className="flex gap-1 flex-wrap">
             <LanguageSelector />
             <Button 
               onClick={() => window.location.href = createPageUrl("Console") + `?branch_id=${branch_id}`}
               variant="outline"
+              size="sm"
             >
               {t.exitToDepartments}
             </Button>
             <Button 
-              onClick={clearAllTickets} 
-              variant="outline" 
-              style={{ borderColor: '#E52521', color: '#E52521' }}
-            >
-              {t.clearQueue}
-            </Button>
-            <Button 
               onClick={() => setOnBreak(!onBreak)}
               variant={onBreak ? "default" : "outline"}
+              size="sm"
               style={onBreak ? { backgroundColor: '#41B649', color: 'white' } : {}}
             >
-              <Coffee className="w-4 h-4 ml-2" />
+              <Coffee className="w-3 h-3 ml-1" />
               {onBreak ? t.backToWork : t.break}
             </Button>
           </div>
         </div>
 
         <Tabs defaultValue="current" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mx-auto mb-6">
-            <TabsTrigger value="current">{t.currentTicket}</TabsTrigger>
-            <TabsTrigger value="history">
-              <History className="w-4 h-4 ml-2" />
+          <TabsList className="grid w-full grid-cols-2 mb-3">
+            <TabsTrigger value="current" className="text-sm">{t.currentTicket}</TabsTrigger>
+            <TabsTrigger value="history" className="text-sm">
+              <History className="w-3 h-3 ml-1" />
               {t.history}
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="current">
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Search and promote */}
+            <div className="grid grid-cols-1 gap-3">
+              {/* Search and promote - מותאם לטאבלט */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle className="flex items-center gap-2">
-                    <Search className="w-5 h-5" />
+                <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Search className="w-4 h-4" />
                     {t.searchAndPromote}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="flex gap-2">
                     <Input
                       type="number"
                       placeholder={t.enterTicketNumber}
                       value={searchSeq}
                       onChange={(e) => setSearchSeq(e.target.value)}
-                      className="flex-1 text-lg"
+                      className="flex-1 text-base h-9"
                       dir="ltr"
                     />
                     <Button 
                       onClick={searchTicket} 
-                      className="gap-2 text-white"
+                      className="gap-1 text-white text-sm h-9"
                       style={{ backgroundColor: '#41B649' }}
                     >
                       {t.search}
@@ -812,7 +809,7 @@ export default function Console() {
                   </div>
                   
                   {searchMessage && (
-                    <div className={`p-3 rounded-lg mt-3 ${
+                    <div className={`p-2 rounded-lg mt-2 text-sm ${
                       searchMessage.includes('✓') 
                         ? 'bg-green-50 text-green-800' 
                         : 'bg-red-50 text-red-800'
@@ -824,7 +821,7 @@ export default function Console() {
                   {foundTicket && foundTicket.state === "waiting" && (
                     <Button 
                       onClick={promoteTicket} 
-                      className="w-full mt-3 text-white"
+                      className="w-full mt-2 text-white text-sm h-9"
                       style={{ backgroundColor: '#E52521' }}
                     >
                       {t.promoteToTop}
@@ -833,93 +830,93 @@ export default function Console() {
                 </CardContent>
               </Card>
 
-              {/* Current ticket */}
+              {/* Current ticket - מותאם לטאבלט */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle>{t.currentCard}</CardTitle>
+                <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
+                  <CardTitle className="text-base">{t.currentCard}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-3">
                   {currentTicket ? (
-                    <div className="space-y-6">
+                    <div className="space-y-3">
                       <motion.div
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
-                        className="text-center p-8 rounded-xl"
+                        className="text-center p-4 rounded-xl"
                         style={{ backgroundColor: '#E6F9EA' }}
                       >
-                        <div className="text-6xl font-bold mb-2" style={{ color: '#E52521' }}>
+                        <div className="text-4xl font-bold mb-1" style={{ color: '#E52521' }}>
                           {currentTicket.ticket_number}
                         </div>
-                        <div className="text-lg font-medium">{t.inService}</div>
+                        <div className="text-sm font-medium">{t.inService}</div>
                       </motion.div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-2">
                         <Button 
                           onClick={recall} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#E52521' }}
                         >
-                          <Volume2 className="w-4 h-4" />
+                          <Volume2 className="w-3 h-3" />
                           {t.recall}
                         </Button>
                         
                         <Button 
                           onClick={finishService} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#41B649' }}
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-3 h-3" />
                           {t.finishService}
                         </Button>
                         
                         <Button 
                           onClick={skipTicket} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#E52521' }}
                         >
-                          <SkipForward className="w-4 h-4" />
+                          <SkipForward className="w-3 h-3" />
                           {t.skip}
                         </Button>
                         
                         <Button 
                           onClick={customerLeft} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#E52521' }}
                         >
-                          <XCircle className="w-4 h-4" />
+                          <XCircle className="w-3 h-3" />
                           {t.customerLeft}
                         </Button>
                         
                         <Button 
                           onClick={requeueTicket} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#41B649' }}
                         >
-                          <RotateCcw className="w-4 h-4" />
+                          <RotateCcw className="w-3 h-3" />
                           {t.returnToQueue}
                         </Button>
                         
                         <Button 
                           onClick={() => setTransferDialog(true)} 
-                          className="gap-2 text-white"
+                          className="gap-1 text-white text-sm h-9"
                           style={{ backgroundColor: '#E52521' }}
                         >
-                          <ArrowRightLeft className="w-4 h-4" />
+                          <ArrowRightLeft className="w-3 h-3" />
                           {t.transfer}
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-12">
-                      <p className="text-gray-600 mb-6">{t.noCurrentTicket}</p>
+                    <div className="text-center py-6">
+                      <p className="text-gray-600 text-sm mb-3">{t.noCurrentTicket}</p>
                       <Button 
                         onClick={callNext} 
-                        size="lg" 
+                        size="default"
                         className="gap-2 text-white"
                         style={{ backgroundColor: '#E52521' }}
                         disabled={waitingTickets.length === 0}
                       >
-                        <PhoneCall className="w-5 h-5" />
+                        <PhoneCall className="w-4 h-4" />
                         {t.callNext}
                       </Button>
                     </div>
@@ -927,28 +924,28 @@ export default function Console() {
                 </CardContent>
               </Card>
 
-              {/* Waiting queue */}
+              {/* Waiting queue - מותאם לטאבלט */}
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle>{t.waiting} ({waitingTickets.length})</CardTitle>
+                <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
+                  <CardTitle className="text-base">{t.waiting} ({waitingTickets.length})</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                <CardContent className="p-3">
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
                     {waitingTickets.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-6 text-gray-500 text-sm">
                         {t.noWaitingTickets}
                       </div>
                     ) : (
                       waitingTickets.slice(0, 10).map((ticket, idx) => (
-                        <div key={ticket.id} className="flex items-center gap-3">
+                        <div key={ticket.id} className="flex items-center gap-2">
                           <div 
-                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: '#41B649' }}
                           >
-                            <span className="text-white font-bold text-sm">{idx + 1}</span>
+                            <span className="text-white font-bold text-xs">{idx + 1}</span>
                           </div>
-                          <Card className="flex-1 p-4 bg-white border-gray-200">
-                            <span className="text-2xl font-bold" style={{ color: '#E52521' }}>
+                          <Card className="flex-1 p-2 bg-white border-gray-200">
+                            <span className="text-xl font-bold" style={{ color: '#E52521' }}>
                               {ticket.ticket_number}
                             </span>
                           </Card>
@@ -962,23 +959,23 @@ export default function Console() {
           </TabsContent>
           
           <TabsContent value="history">
-            <Card className="bg-white shadow-md max-w-3xl mx-auto" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-              <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                <CardTitle>{t.todayHistory}</CardTitle>
+            <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+              <CardHeader className="p-3" style={{ backgroundColor: '#E6F9EA' }}>
+                <CardTitle className="text-base">{t.todayHistory}</CardTitle>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <Input
                   type="number"
                   placeholder={t.searchTicket}
                   value={historySearchSeq}
                   onChange={(e) => setHistorySearchSeq(e.target.value)}
-                  className="mb-4"
+                  className="mb-3 h-9 text-sm"
                   dir="ltr"
                 />
                 
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {searchHistoryTicket().length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-6 text-gray-500 text-sm">
                       {t.noResults}
                     </div>
                   ) : (
@@ -993,16 +990,17 @@ export default function Console() {
                       return (
                         <Card 
                           key={ticket.id} 
-                          className="p-4" 
+                          className="p-3" 
                           style={{ backgroundColor: status.bg }}
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="text-3xl font-bold" style={{ color: '#E52521' }}>
+                            <div className="flex items-center gap-3">
+                              <div className="text-2xl font-bold" style={{ color: '#E52521' }}>
                                 {ticket.ticket_number}
                               </div>
                               <div>
                                 <Badge 
+                                  className="text-xs"
                                   style={{ 
                                     backgroundColor: status.bg, 
                                     color: status.text,
@@ -1012,7 +1010,7 @@ export default function Console() {
                                 >
                                   {status.label}
                                 </Badge>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-xs text-gray-600 mt-1">
                                   {ticket.finished_at ? new Date(ticket.finished_at).toLocaleTimeString('he-IL') : '-'}
                                 </p>
                               </div>
