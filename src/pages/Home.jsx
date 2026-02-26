@@ -51,18 +51,22 @@ export default function HomePage() {
       );
       const totalActiveDepartments = activeSettings.length;
 
-      const tickets = await base44.entities.Ticket.list();
-
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const activeTickets = tickets.filter(t =>
-        t.state === "waiting" || t.state === "called" || t.state === "in_service"
-      ).length;
+      // Fetch only what we need instead of all tickets
+      const [activeWaiting, activeCalled, activeInService, servedTodayTickets] = await Promise.all([
+        base44.entities.Ticket.filter({ state: "waiting" }),
+        base44.entities.Ticket.filter({ state: "called" }),
+        base44.entities.Ticket.filter({ state: "in_service" }),
+        base44.entities.Ticket.filter({ 
+          state: "served",
+          finished_at: { $gte: today.toISOString() }
+        })
+      ]);
 
-      const servedToday = tickets.filter(t =>
-        t.state === "served" && t.finished_at && new Date(t.finished_at) >= today
-      ).length;
+      const activeTickets = activeWaiting.length + activeCalled.length + activeInService.length;
+      const servedToday = servedTodayTickets.length;
 
       setStats({
         totalQueues: totalActiveDepartments, // show active departments count
