@@ -6,45 +6,47 @@ Deno.serve(async (req) => {
     
     console.log('[Reset Counters] Starting daily queue counter reset...');
     
-    // Get all queues
+    // Get all queues and reset in parallel
     const allQueues = await base44.asServiceRole.entities.Queue.list();
     console.log(`[Reset Counters] Found ${allQueues.length} queues`);
     
-    // Reset seq_counter for each queue
-    let resetCount = 0;
-    for (const queue of allQueues) {
-      await base44.asServiceRole.entities.Queue.update(queue.id, {
-        seq_counter: 0
-      });
-      resetCount++;
-      console.log(`[Reset Counters] Reset queue: ${queue.name} (${queue.id})`);
+    // Reset all queues in parallel
+    await Promise.all(
+      allQueues.map(queue => 
+        base44.asServiceRole.entities.Queue.update(queue.id, { seq_counter: 0 })
+      )
+    );
+    console.log(`[Reset Counters] Successfully reset ${allQueues.length} queue counters`);
+    
+    // Get active tickets with limit and batch cancel
+    console.log('[Reset Counters] Cancelling active tickets...');
+    const batchSize = 50;
+    let totalCancelled = 0;
+    
+    for (const state of ['waiting', 'called', 'in_service']) {
+      let hasMore = true;
+      while (hasMore) {
+        const tickets = await base44.asServiceRole.entities.Ticket.filter(
+          { state },
+          undefined,
+          batchSize
+        );
+        
+        if (tickets.length === 0) {
+          hasMore = false;
+        } else {
+          await Promise.all(
+            tickets.map(ticket => 
+              base44.asServiceRole.entities.Ticket.update(ticket.id, { state: 'cancelled' })
+            )
+          );
+          totalCancelled += tickets.length;
+          hasMore = tickets.length === batchSize;
+        }
+      }
     }
     
-    console.log(`[Reset Counters] Successfully reset ${resetCount} queue counters`);
-    
-    // Cancel all active tickets (waiting, called, in_service)
-    const activeTickets = await base44.asServiceRole.entities.Ticket.filter({
-      state: 'waiting'
-    });
-    const calledTickets = await base44.asServiceRole.entities.Ticket.filter({
-      state: 'called'
-    });
-    const inServiceTickets = await base44.asServiceRole.entities.Ticket.filter({
-      state: 'in_service'
-    });
-    
-    const allActiveTickets = [...activeTickets, ...calledTickets, ...inServiceTickets];
-    console.log(`[Reset Counters] Found ${allActiveTickets.length} active tickets to cancel`);
-    
-    // Cancel tickets in parallel using Promise.all for better performance
-    if (allActiveTickets.length > 0) {
-      await Promise.all(
-        allActiveTickets.map(ticket => 
-          base44.asServiceRole.entities.Ticket.update(ticket.id, { state: 'cancelled' })
-        )
-      );
-      console.log(`[Reset Counters] Successfully cancelled ${allActiveTickets.length} active tickets`);
-    }
+    console.log(`[Reset Counters] Successfully cancelled ${totalCancelled} active tickets`);
     
     return Response.json({ 
       success: true, 
