@@ -22,21 +22,15 @@ Deno.serve(async (req) => {
     
     console.log(`[Reset Counters] Successfully reset ${resetCount} queue counters`);
     
-    // Cancel all active tickets (waiting, called, in_service)
-    const activeTickets = await base44.asServiceRole.entities.Ticket.filter({
-      state: { $in: ['waiting', 'called', 'in_service'] }
-    });
-    console.log(`[Reset Counters] Found ${activeTickets.length} active tickets to cancel`);
+    // Cancel all active tickets (waiting, called, in_service) using bulk update
+    console.log(`[Reset Counters] Cancelling all active tickets...`);
     
-    let cancelledCount = 0;
-    for (const ticket of activeTickets) {
-      await base44.asServiceRole.entities.Ticket.update(ticket.id, {
-        state: 'cancelled'
-      });
-      cancelledCount++;
-    }
+    await base44.asServiceRole.entities.Ticket.bulkUpdate(
+      { state: { $in: ['waiting', 'called', 'in_service'] } },
+      { state: 'cancelled' }
+    );
     
-    console.log(`[Reset Counters] Successfully cancelled ${cancelledCount} active tickets`);
+    console.log(`[Reset Counters] Successfully cancelled all active tickets`);
     
     return Response.json({ 
       success: true, 
