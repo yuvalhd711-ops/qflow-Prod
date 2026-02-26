@@ -613,96 +613,146 @@ export default function Reports() {
                       <p className="text-sm text-gray-600 mt-1">פילוח תורים לפי סניף ושיטת לקיחה</p>
                     </CardHeader>
                     <CardContent className="p-6">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-right font-bold text-base">סניף</TableHead>
-                            <TableHead className="text-right font-bold text-base">סה"כ תורים</TableHead>
-                            <TableHead className="text-right font-bold text-base">עם SMS</TableHead>
-                            <TableHead className="text-right font-bold text-base">בלי SMS</TableHead>
-                            <TableHead className="text-right font-bold text-base">קיוסק</TableHead>
-                            <TableHead className="text-right font-bold text-base">QR</TableHead>
-                            <TableHead className="text-right font-bold text-base">Web</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getBranchSourceSummary().map((branch) => (
-                            <TableRow key={branch.name}>
-                              <TableCell className="font-bold text-lg" style={{ color: '#1F5F25' }}>
-                                {branch.name}
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
-                                  {branch.totalTickets}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Smartphone className="h-5 w-5" style={{ color: '#41B649' }} />
-                                  <span className="text-xl font-semibold" style={{ color: '#41B649' }}>
-                                    {branch.withSMS}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            {/* Main Headers */}
+                            <tr>
+                              <th rowSpan="2" className="text-right font-bold text-base p-4 border-b-2" style={{ borderColor: '#41B649' }}>
+                                סניף
+                              </th>
+                              <th rowSpan="2" className="text-right font-bold text-base p-4 border-b-2" style={{ borderColor: '#41B649' }}>
+                                סה"כ תורים
+                              </th>
+                              <th colSpan="2" className="text-center font-bold text-base p-3 border-b border-l-2" style={{ backgroundColor: '#E6F9EA', color: '#1F5F25', borderColor: '#41B649' }}>
+                                📱 פילוח לפי SMS
+                              </th>
+                              <th colSpan="3" className="text-center font-bold text-base p-3 border-b-2" style={{ backgroundColor: '#FFF3E0', color: '#F59E0B', borderColor: '#F59E0B' }}>
+                                🖥️ פילוח לפי מקור יצירה
+                              </th>
+                            </tr>
+                            {/* Sub Headers */}
+                            <tr>
+                              <th className="text-right font-semibold text-sm p-3 border-b-2 border-l-2" style={{ backgroundColor: '#F0FDF4', borderColor: '#41B649' }}>
+                                עם SMS
+                              </th>
+                              <th className="text-right font-semibold text-sm p-3 border-b-2 border-l-2" style={{ backgroundColor: '#F9FAFB', borderColor: '#41B649' }}>
+                                בלי SMS
+                              </th>
+                              <th className="text-right font-semibold text-sm p-3 border-b-2" style={{ backgroundColor: '#FEE2E2' }}>
+                                קיוסק
+                              </th>
+                              <th className="text-right font-semibold text-sm p-3 border-b-2" style={{ backgroundColor: '#FEF3C7' }}>
+                                QR
+                              </th>
+                              <th className="text-right font-semibold text-sm p-3 border-b-2" style={{ backgroundColor: '#F0FDF4' }}>
+                                Web
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getBranchSourceSummary().map((branch, idx) => (
+                              <tr key={branch.name} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="font-bold text-lg p-4" style={{ color: '#1F5F25' }}>
+                                  {branch.name}
+                                </td>
+                                <td className="p-4">
+                                  <span className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
+                                    {branch.totalTickets}
                                   </span>
-                                  <span className="text-sm text-gray-500">
-                                    ({branch.totalTickets > 0 ? Math.round((branch.withSMS / branch.totalTickets) * 100) : 0}%)
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xl font-semibold text-gray-600">
-                                    {branch.withoutSMS}
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    ({branch.totalTickets > 0 ? Math.round((branch.withoutSMS / branch.totalTickets) * 100) : 0}%)
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  style={{ 
-                                    backgroundColor: '#E5252120',
-                                    color: '#E52521',
-                                    borderColor: '#E52521',
-                                    borderWidth: '2px',
-                                    fontSize: '1rem',
-                                    padding: '0.5rem 0.75rem'
-                                  }}
-                                >
-                                  {branch.kiosk}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  style={{ 
-                                    backgroundColor: '#F59E0B20',
-                                    color: '#F59E0B',
-                                    borderColor: '#F59E0B',
-                                    borderWidth: '2px',
-                                    fontSize: '1rem',
-                                    padding: '0.5rem 0.75rem'
-                                  }}
-                                >
-                                  {branch.qr}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  style={{ 
-                                    backgroundColor: '#41B64920',
-                                    color: '#41B649',
-                                    borderColor: '#41B649',
-                                    borderWidth: '2px',
-                                    fontSize: '1rem',
-                                    padding: '0.5rem 0.75rem'
-                                  }}
-                                >
-                                  {branch.web}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                </td>
+                                <td className="p-4 border-l-2" style={{ borderColor: '#41B649' }}>
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                      <Smartphone className="h-5 w-5" style={{ color: '#41B649' }} />
+                                      <span className="text-xl font-bold" style={{ color: '#41B649' }}>
+                                        {branch.withSMS}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm text-gray-500">
+                                      {branch.totalTickets > 0 ? Math.round((branch.withSMS / branch.totalTickets) * 100) : 0}% מהתורים
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-4 border-l-2" style={{ borderColor: '#41B649' }}>
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-xl font-bold text-gray-700">
+                                      {branch.withoutSMS}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      {branch.totalTickets > 0 ? Math.round((branch.withoutSMS / branch.totalTickets) * 100) : 0}% מהתורים
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Badge 
+                                      style={{ 
+                                        backgroundColor: '#E52521',
+                                        color: 'white',
+                                        fontSize: '1.125rem',
+                                        padding: '0.5rem 1rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      {branch.kiosk}
+                                    </Badge>
+                                    <span className="text-xs text-gray-500">
+                                      {branch.totalTickets > 0 ? Math.round((branch.kiosk / branch.totalTickets) * 100) : 0}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Badge 
+                                      style={{ 
+                                        backgroundColor: '#F59E0B',
+                                        color: 'white',
+                                        fontSize: '1.125rem',
+                                        padding: '0.5rem 1rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      {branch.qr}
+                                    </Badge>
+                                    <span className="text-xs text-gray-500">
+                                      {branch.totalTickets > 0 ? Math.round((branch.qr / branch.totalTickets) * 100) : 0}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Badge 
+                                      style={{ 
+                                        backgroundColor: '#41B649',
+                                        color: 'white',
+                                        fontSize: '1.125rem',
+                                        padding: '0.5rem 1rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      {branch.web}
+                                    </Badge>
+                                    <span className="text-xs text-gray-500">
+                                      {branch.totalTickets > 0 ? Math.round((branch.web / branch.totalTickets) * 100) : 0}%
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {/* Legend / Explanation */}
+                      <div className="mt-6 p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', borderColor: '#41B649', borderWidth: '2px' }}>
+                        <p className="text-sm font-semibold mb-2" style={{ color: '#1F5F25' }}>💡 הסבר:</p>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          <li><strong>פילוח לפי SMS:</strong> כמה מהתורים נלקחו עם מספר טלפון (SMS) וכמה בלי</li>
+                          <li><strong>פילוח לפי מקור יצירה:</strong> איפה התור נוצר - בקיוסק הפיזי, דרך QR או דרך האתר</li>
+                          <li className="text-xs text-gray-600 mt-2">* שים לב: תור יכול להיות "עם SMS" וגם "קיוסק", לדוגמה. אלו שתי קטגוריות נפרדות.</li>
+                        </ul>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
