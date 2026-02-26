@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Clock, Users, Award, Download, AlertCircle, X, BarChart3, UserCheck } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Users, Award, Download, AlertCircle, X, BarChart3, Building2, Smartphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -135,34 +135,47 @@ export default function Reports() {
     };
   };
 
-  // Top 5 employees by tickets served
-  const getTopEmployees = () => {
-    const filtered = getFilteredTickets().filter(t => t.state === "served" && t.served_by);
-    const employeeStats = {};
+  // Branch and Source summary
+  const getBranchSourceSummary = () => {
+    const filtered = getFilteredTickets();
+    const branchStats = {};
     
     filtered.forEach(ticket => {
-      const email = ticket.served_by;
-      if (!employeeStats[email]) {
-        employeeStats[email] = { email, ticketsServed: 0, totalServiceTime: 0, count: 0 };
+      const branch = branches.find(b => b.id === ticket.branch_id);
+      const branchName = branch?.name || "לא ידוע";
+      
+      if (!branchStats[branchName]) {
+        branchStats[branchName] = {
+          name: branchName,
+          totalTickets: 0,
+          withSMS: 0,
+          withoutSMS: 0,
+          kiosk: 0,
+          qr: 0,
+          web: 0
+        };
       }
-      employeeStats[email].ticketsServed++;
-      if (ticket.service_time_seconds) {
-        employeeStats[email].totalServiceTime += ticket.service_time_seconds;
-        employeeStats[email].count++;
+      
+      branchStats[branchName].totalTickets++;
+      
+      // Count by SMS presence
+      if (ticket.customer_phone) {
+        branchStats[branchName].withSMS++;
+      } else {
+        branchStats[branchName].withoutSMS++;
+      }
+      
+      // Count by source
+      if (ticket.source === "kiosk") {
+        branchStats[branchName].kiosk++;
+      } else if (ticket.source === "qr") {
+        branchStats[branchName].qr++;
+      } else if (ticket.source === "web") {
+        branchStats[branchName].web++;
       }
     });
     
-    return Object.values(employeeStats)
-      .map(emp => {
-        const user = users.find(u => u.email === emp.email);
-        return {
-          name: user?.full_name || emp.email,
-          ticketsServed: emp.ticketsServed,
-          avgServiceTime: emp.count > 0 ? Math.round(emp.totalServiceTime / emp.count / 60) : 0
-        };
-      })
-      .sort((a, b) => b.ticketsServed - a.ticketsServed)
-      .slice(0, 5);
+    return Object.values(branchStats).sort((a, b) => b.totalTickets - a.totalTickets);
   };
 
   // Wait times by hour (heatmap data)
@@ -250,67 +263,7 @@ export default function Reports() {
     })).sort((a, b) => b.totalTickets - a.totalTickets);
   };
 
-  // Detailed employee performance with queue info
-  const getDetailedEmployeePerformance = () => {
-    const filtered = getFilteredTickets().filter(t => t.state === "served" && t.served_by);
-    const employeeStats = {};
-    
-    filtered.forEach(ticket => {
-      const email = ticket.served_by;
-      const queue = queues.find(q => q.id === ticket.queue_id);
-      const branch = branches.find(b => b.id === ticket.branch_id);
-      
-      if (!employeeStats[email]) {
-        const user = users.find(u => u.email === email);
-        employeeStats[email] = {
-          email,
-          name: user?.full_name || email,
-          branchName: branch?.name || "לא ידוע",
-          ticketsServed: 0,
-          totalServiceTime: 0,
-          serviceTimeCount: 0,
-          queues: new Set()
-        };
-      }
-      
-      employeeStats[email].ticketsServed++;
-      if (queue) {
-        employeeStats[email].queues.add(queue.name);
-      }
-      
-      if (ticket.service_time_seconds) {
-        employeeStats[email].totalServiceTime += ticket.service_time_seconds;
-        employeeStats[email].serviceTimeCount++;
-      }
-    });
-    
-    const result = Object.values(employeeStats).map(emp => ({
-      name: emp.name,
-      email: emp.email,
-      branchName: emp.branchName,
-      department: Array.from(emp.queues).join(", "),
-      ticketsServed: emp.ticketsServed,
-      avgServiceTime: emp.serviceTimeCount > 0 ? Math.round(emp.totalServiceTime / emp.serviceTimeCount / 60) : 0
-    })).sort((a, b) => b.ticketsServed - a.ticketsServed);
-    
-    // Calculate performance rating
-    const avgTickets = result.length > 0 ? result.reduce((s, e) => s + e.ticketsServed, 0) / result.length : 0;
-    
-    return result.map(emp => {
-      const ratio = avgTickets > 0 ? emp.ticketsServed / avgTickets : 1;
-      let performance = { text: "בינוני", color: "#6B7280" };
-      
-      if (ratio >= 1.3) {
-        performance = { text: "מעולה", color: "#41B649" };
-      } else if (ratio >= 1.1) {
-        performance = { text: "טוב", color: "#41B649" };
-      } else if (ratio < 0.8) {
-        performance = { text: "דורש שיפור", color: "#E52521" };
-      }
-      
-      return { ...emp, performance };
-    });
-  };
+
 
   if (loading) {
     return (
@@ -556,16 +509,16 @@ export default function Reports() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Tabs: Departments vs Employees */}
+            {/* Tabs: Departments vs Branch/Source */}
             <Tabs defaultValue="departments" className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-2 mx-auto bg-white shadow-md">
                 <TabsTrigger value="departments" className="gap-2">
                   <BarChart3 className="h-4 w-4" />
                   סיכום לפי מחלקות
                 </TabsTrigger>
-                <TabsTrigger value="employees" className="gap-2">
-                  <UserCheck className="h-4 w-4" />
-                  סיכום לפי עובדים
+                <TabsTrigger value="branches" className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  תורים לפי סניף ומקור
                 </TabsTrigger>
               </TabsList>
 
@@ -642,147 +595,121 @@ export default function Reports() {
                 )}
               </TabsContent>
 
-              {/* Employees Tab */}
-              <TabsContent value="employees" className="space-y-6 mt-6">
-                {getDetailedEmployeePerformance().length === 0 ? (
+              {/* Branch and Source Tab */}
+              <TabsContent value="branches" className="space-y-6 mt-6">
+                {getBranchSourceSummary().length === 0 ? (
                   <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
                     <CardContent className="p-12 text-center">
-                      <UserCheck className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                      <p className="text-xl font-semibold text-gray-600">אין נתוני עובדים להצגה</p>
+                      <Building2 className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                      <p className="text-xl font-semibold text-gray-600">אין נתונים להצגה</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <>
-                    {/* Top 5 Employees Chart */}
-                    <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                      <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                        <CardTitle className="text-xl font-bold" style={{ color: '#1F5F25' }}>
-                          🏆 Top 5 עובדים - תורים שטופלו
-                        </CardTitle>
-                        <p className="text-sm text-gray-600 mt-1">העובדים המובילים בטיפול בלקוחות</p>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <ResponsiveContainer width="100%" height={350}>
-                          <BarChart data={getTopEmployees()} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'white', 
-                                border: '2px solid #41B649',
-                                borderRadius: '8px'
-                              }}
-                            />
-                            <Bar dataKey="ticketsServed" fill="#41B649" name="תורים שטופלו" radius={[0, 8, 8, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-
-                    {/* Detailed Employee Performance Table */}
-                    <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                      <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                        <CardTitle className="text-xl font-bold" style={{ color: '#1F5F25' }}>
-                          👥 ביצועי עובדים מפורט
-                        </CardTitle>
-                        <p className="text-sm text-gray-600 mt-1">נתוני ביצועים מלאים לכל עובד</p>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right font-bold">שם עובד</TableHead>
-                              <TableHead className="text-right font-bold">סניף</TableHead>
-                              <TableHead className="text-right font-bold">מחלקה</TableHead>
-                              <TableHead className="text-right font-bold">תורים שטופלו</TableHead>
-                              <TableHead className="text-right font-bold">זמן שירות ממוצע</TableHead>
-                              <TableHead className="text-right font-bold">ביצועים</TableHead>
+                  <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
+                    <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
+                      <CardTitle className="text-xl font-bold" style={{ color: '#1F5F25' }}>
+                        🏢 תורים לפי סניף ומקור
+                      </CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">פילוח תורים לפי סניף ושיטת לקיחה</p>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-right font-bold text-base">סניף</TableHead>
+                            <TableHead className="text-right font-bold text-base">סה"כ תורים</TableHead>
+                            <TableHead className="text-right font-bold text-base">עם SMS</TableHead>
+                            <TableHead className="text-right font-bold text-base">בלי SMS</TableHead>
+                            <TableHead className="text-right font-bold text-base">קיוסק</TableHead>
+                            <TableHead className="text-right font-bold text-base">QR</TableHead>
+                            <TableHead className="text-right font-bold text-base">Web</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {getBranchSourceSummary().map((branch) => (
+                            <TableRow key={branch.name}>
+                              <TableCell className="font-bold text-lg" style={{ color: '#1F5F25' }}>
+                                {branch.name}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
+                                  {branch.totalTickets}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Smartphone className="h-5 w-5" style={{ color: '#41B649' }} />
+                                  <span className="text-xl font-semibold" style={{ color: '#41B649' }}>
+                                    {branch.withSMS}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    ({branch.totalTickets > 0 ? Math.round((branch.withSMS / branch.totalTickets) * 100) : 0}%)
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl font-semibold text-gray-600">
+                                    {branch.withoutSMS}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    ({branch.totalTickets > 0 ? Math.round((branch.withoutSMS / branch.totalTickets) * 100) : 0}%)
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  style={{ 
+                                    backgroundColor: '#E5252120',
+                                    color: '#E52521',
+                                    borderColor: '#E52521',
+                                    borderWidth: '2px',
+                                    fontSize: '1rem',
+                                    padding: '0.5rem 0.75rem'
+                                  }}
+                                >
+                                  {branch.kiosk}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  style={{ 
+                                    backgroundColor: '#F59E0B20',
+                                    color: '#F59E0B',
+                                    borderColor: '#F59E0B',
+                                    borderWidth: '2px',
+                                    fontSize: '1rem',
+                                    padding: '0.5rem 0.75rem'
+                                  }}
+                                >
+                                  {branch.qr}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  style={{ 
+                                    backgroundColor: '#41B64920',
+                                    color: '#41B649',
+                                    borderColor: '#41B649',
+                                    borderWidth: '2px',
+                                    fontSize: '1rem',
+                                    padding: '0.5rem 0.75rem'
+                                  }}
+                                >
+                                  {branch.web}
+                                </Badge>
+                              </TableCell>
                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {getDetailedEmployeePerformance().map((emp, index) => (
-                              <TableRow key={emp.email}>
-                                <TableCell className="font-semibold text-lg">
-                                  <div className="flex items-center gap-3">
-                                    <div 
-                                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                                      style={{ backgroundColor: index < 3 ? '#E52521' : '#41B649' }}
-                                    >
-                                      {index + 1}
-                                    </div>
-                                    {emp.name}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-gray-600">{emp.branchName}</TableCell>
-                                <TableCell className="text-gray-600">{emp.department}</TableCell>
-                                <TableCell>
-                                  <span className="text-2xl font-bold" style={{ color: '#1F5F25' }}>
-                                    {emp.ticketsServed}
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="font-medium text-lg" style={{ 
-                                    color: emp.avgServiceTime > 10 ? '#F59E0B' : emp.avgServiceTime > 5 ? '#1F5F25' : '#41B649'
-                                  }}>
-                                    {emp.avgServiceTime} דקות
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge 
-                                    style={{ 
-                                      backgroundColor: emp.performance.color + '20',
-                                      color: emp.performance.color,
-                                      borderColor: emp.performance.color,
-                                      borderWidth: '2px',
-                                      fontSize: '0.875rem',
-                                      padding: '0.5rem 1rem'
-                                    }}
-                                  >
-                                    {emp.performance.text}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  </>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
                 )}
               </TabsContent>
             </Tabs>
 
             {/* Wait Times by Hour */}
-            {getWaitTimesByHour().length > 0 && (
-              <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
-                <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
-                  <CardTitle className="text-xl font-bold" style={{ color: '#1F5F25' }}>
-                    🏆 Top 5 עובדים - תורים שטופלו
-                  </CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">העובדים המובילים בטיפול בלקוחות</p>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={getTopEmployees()} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" width={150} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '2px solid #41B649',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Bar dataKey="ticketsServed" fill="#41B649" name="תורים שטופלו" radius={[0, 8, 8, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Wait Times by Hour - Always visible */}
             {getWaitTimesByHour().length > 0 && (
               <Card className="bg-white shadow-md" style={{ borderColor: '#41B649', borderWidth: '2px' }}>
                 <CardHeader style={{ backgroundColor: '#E6F9EA' }}>
