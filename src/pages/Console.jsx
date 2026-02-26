@@ -26,6 +26,7 @@ export default function Console() {
   const [onBreak, setOnBreak] = useState(false);
   const [historySearchSeq, setHistorySearchSeq] = useState("");
   const [language, setLanguage] = useState("he");
+  const [resettingCounters, setResettingCounters] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
@@ -518,6 +519,37 @@ export default function Console() {
     }
   };
 
+  // Reset counters
+  const resetCounters = async () => {
+    if (!confirm(language === "he" ? "האם לאפס את מונה התורים לכל המחלקות?\n\nכל התורים יתחילו מ-001 מחדש (גם במדפסת וגם במסך התצוגה)." : 
+                 language === "en" ? "Reset ticket counters for all departments?\n\nAll tickets will start from 001 again (both in printer and display screen)." :
+                 language === "ar" ? "إعادة تعيين عدادات التذاكر لجميع الأقسام؟\n\nستبدأ جميع التذاكر من 001 مرة أخرى (في الطابعة وشاشة العرض)." :
+                 "รีเซ็ตตัวนับบัตรคิวสำหรับทุกแผนก?\n\nบัตรคิวทั้งหมดจะเริ่มจาก 001 อีกครั้ง (ทั้งเครื่องพิมพ์และหน้าจอแสดงผล)")) {
+      return;
+    }
+
+    setResettingCounters(true);
+    try {
+      await base44.functions.invoke('resetQueueCounters', {});
+      const successMsg = language === "he" ? "✅ מונה התורים אופס בהצלחה!\n\nכל התורים יתחילו מ-001 מחדש." :
+                        language === "en" ? "✅ Counters reset successfully!\n\nAll tickets will start from 001." :
+                        language === "ar" ? "✅ تم إعادة تعيين العدادات بنجاح!\n\nستبدأ جميع التذاكر من 001." :
+                        "✅ รีเซ็ตตัวนับสำเร็จ!\n\nบัตรคิวทั้งหมดจะเริ่มจาก 001";
+      alert(successMsg);
+      await loadData();
+      window.location.reload(); // Refresh to ensure display screen updates
+    } catch (error) {
+      console.error("Reset counters error:", error);
+      const errorMsg = language === "he" ? "❌ שגיאה באיפוס מונים:\n\n" + String(error) :
+                      language === "en" ? "❌ Error resetting counters:\n\n" + String(error) :
+                      language === "ar" ? "❌ خطأ في إعادة تعيين العدادات:\n\n" + String(error) :
+                      "❌ ข้อผิดพลาดในการรีเซ็ตตัวนับ:\n\n" + String(error);
+      alert(errorMsg);
+    } finally {
+      setResettingCounters(false);
+    }
+  };
+
   const LanguageSelector = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     
@@ -705,6 +737,15 @@ export default function Console() {
           
           <div className="flex gap-1 flex-wrap">
             <LanguageSelector />
+            <Button 
+              onClick={resetCounters}
+              disabled={resettingCounters}
+              size="sm"
+              className="text-white"
+              style={{ backgroundColor: '#F59E0B' }}
+            >
+              {resettingCounters ? (language === "he" ? "מאפס..." : language === "en" ? "Resetting..." : language === "ar" ? "جاري إعادة التعيين..." : "กำลังรีเซ็ต...") : "🔄"}
+            </Button>
             <Button 
               onClick={() => window.location.href = createPageUrl("Console") + `?branch_id=${branch_id}`}
               variant="outline"
