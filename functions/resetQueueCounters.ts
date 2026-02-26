@@ -6,42 +6,52 @@ Deno.serve(async (req) => {
     
     console.log('[Reset Counters] Starting daily queue counter reset...');
     
-    // Get all queues and reset in parallel
+    // Get all queues and reset in batches
     const allQueues = await base44.asServiceRole.entities.Queue.list();
     console.log(`[Reset Counters] Found ${allQueues.length} queues`);
     
-    // Reset all queues in parallel
-    await Promise.all(
-      allQueues.map(queue => 
-        base44.asServiceRole.entities.Queue.update(queue.id, { seq_counter: 0 })
-      )
-    );
+    // Reset queues in batches of 10
+    const queueBatchSize = 10;
+    for (let i = 0; i < allQueues.length; i += queueBatchSize) {
+      const batch = allQueues.slice(i, i + queueBatchSize);
+      await Promise.all(
+        batch.map(queue => 
+          base44.asServiceRole.entities.Queue.update(queue.id, { seq_counter: 0 })
+        )
+      );
+    }
     console.log(`[Reset Counters] Successfully reset ${allQueues.length} queue counters`);
     
-    // Get active tickets with limit and batch cancel
+    // Cancel tickets in smaller batches
     console.log('[Reset Counters] Cancelling active tickets...');
-    const batchSize = 50;
     let totalCancelled = 0;
+    const ticketBatchSize = 10; // Process 10 at a time for speed
     
     for (const state of ['waiting', 'called', 'in_service']) {
+      let offset = 0;
       let hasMore = true;
+      
       while (hasMore) {
         const tickets = await base44.asServiceRole.entities.Ticket.filter(
           { state },
           undefined,
-          batchSize
+          100 // Fetch 100 but process in smaller batches
         );
         
         if (tickets.length === 0) {
           hasMore = false;
         } else {
-          await Promise.all(
-            tickets.map(ticket => 
-              base44.asServiceRole.entities.Ticket.update(ticket.id, { state: 'cancelled' })
-            )
-          );
-          totalCancelled += tickets.length;
-          hasMore = tickets.length === batchSize;
+          // Process in micro-batches of 10
+          for (let i = 0; i < tickets.length; i += ticketBatchSize) {
+            const batch = tickets.slice(i, i + ticketBatchSize);
+            await Promise.all(
+              batch.map(ticket => 
+                base44.asServiceRole.entities.Ticket.update(ticket.id, { state: 'cancelled' })
+              )
+            );
+            totalCancelled += batch.length;
+          }
+          hasMore = tickets.length === 100;
         }
       }
     }
