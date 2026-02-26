@@ -41,6 +41,7 @@ export default function Admin() {
   const [testingSms, setTestingSms] = useState(false);
   const [testPhone, setTestPhone] = useState("");
   const [showSmsTestDialog, setShowSmsTestDialog] = useState(false);
+  const [resettingCounters, setResettingCounters] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -373,6 +374,26 @@ export default function Admin() {
     }
   };
 
+  const resetCounters = async () => {
+    if (!confirm("האם לאפס את מונה התורים לכל המחלקות?\n\nכל התורים יתחילו מ-001 מחדש (גם במדפסת וגם במסך התצוגה).")) {
+      return;
+    }
+
+    setResettingCounters(true);
+    try {
+      const response = await base44.functions.invoke('resetQueueCounters', {});
+      console.log("Reset Counters Response:", response);
+      
+      await loadData();
+      alert("✅ מונה התורים אופס בהצלחה!\n\nכל התורים יתחילו מ-001 מחדש.");
+    } catch (error) {
+      console.error("Reset counters error:", error);
+      alert("❌ שגיאה באיפוס מונים:\n\n" + String(error));
+    } finally {
+      setResettingCounters(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E6F9EA' }}>
@@ -397,7 +418,15 @@ export default function Admin() {
             <h1 className="text-4xl font-bold" style={{ color: '#111111' }}>ניהול מערכת</h1>
             <p className="text-gray-700">ניהול סניפים, מחלקות ואנשי קשר</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            <Button
+              onClick={resetCounters}
+              disabled={resettingCounters}
+              className="text-white shadow-lg"
+              style={{ backgroundColor: '#F59E0B' }}
+            >
+              {resettingCounters ? "מאפס..." : "🔄 איפוס מונה תורים"}
+            </Button>
             <Button
               onClick={() => setShowSmsTestDialog(true)}
               className="text-white"
