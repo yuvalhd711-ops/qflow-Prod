@@ -40,7 +40,9 @@ Deno.serve(async (req) => {
     
     return Response.json({ 
       success: true, 
-      message: `Reset ${resetCount} queue counters`,
+      message: `Reset ${resetCount} queue counters and cancelled ${cancelledCount} active tickets`,
+      queuesReset: resetCount,
+      ticketsCancelled: cancelledCount,
       timestamp: new Date().toISOString()
     });
     
