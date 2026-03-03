@@ -16,6 +16,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  )
+  React.useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)")
+    const onChange = () => setIsMobile(mql.matches)
+    mql.addEventListener("change", onChange)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+  return isMobile
+}
+
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
