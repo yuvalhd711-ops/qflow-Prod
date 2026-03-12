@@ -17,11 +17,10 @@ import {
 } from "@/components/ui/tooltip"
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  )
+  const [isMobile, setIsMobile] = React.useState(false)
   React.useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)")
+    setIsMobile(mql.matches)
     const onChange = () => setIsMobile(mql.matches)
     mql.addEventListener("change", onChange)
     return () => mql.removeEventListener("change", onChange)
