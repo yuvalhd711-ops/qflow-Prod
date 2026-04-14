@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PhoneCall, CheckCircle, XCircle, SkipForward, ArrowRightLeft, RotateCcw, Volume2, Coffee, History, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
+import { useBdsSubscription } from "@/components/utils/bdsSync";
 
 export default function Console() {
   const [user, setUser] = useState(null);
@@ -328,10 +329,17 @@ export default function Console() {
       loadQueue();
       loadData();
       
-      const interval = setInterval(loadData, 30000); // Poll every 30 seconds
+      const interval = setInterval(loadData, 5000); // Poll every 5 seconds
       return () => clearInterval(interval);
     }
   }, [queue_id, loadQueue, loadData]);
+
+  // Real-time BDS subscription - refresh when kiosk creates a new ticket
+  useBdsSubscription(({ scope, branchId }) => {
+    if (queue_id && (scope === "all" || String(branchId) === String(branch_id))) {
+      loadData();
+    }
+  });
 
   // Broadcast ticket call
   const broadcastTicketCall = (ticket, queueName) => {

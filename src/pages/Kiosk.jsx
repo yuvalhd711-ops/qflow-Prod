@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { Printer, Smartphone, Globe } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { broadcastBdsUpdate } from "@/components/utils/bdsSync";
 
 export default function Kiosk() {
   const [branches, setBranches] = useState([]);
@@ -401,6 +402,7 @@ export default function Kiosk() {
       
       setCurrentTicket(newTicket);
       setShowTicket(true);
+      broadcastBdsUpdate({ scope: "branch", branchId: currentBranch.id });
       
       setTimeout(() => {
         printTicket(newTicket);
@@ -484,6 +486,7 @@ export default function Kiosk() {
       setCurrentTicket(newTicket);
       setShowTicket(true);
       setSmsDialog(false);
+      broadcastBdsUpdate({ scope: "branch", branchId: currentBranch.id });
       setPhoneNumber("");
       setJoinClub(false);
 
