@@ -41,6 +41,8 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <>
+    <NavigationTracker />
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
@@ -60,6 +62,7 @@ const AuthenticatedApp = () => {
       ))}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </>
   );
 };
 
@@ -70,7 +73,6 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <Router>
         <AuthProvider>
-          <NavigationTracker />
           <AuthenticatedApp />
           <Toaster />
         </AuthProvider>
