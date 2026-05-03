@@ -28,6 +28,9 @@ export default function Console() {
   const [historySearchSeq, setHistorySearchSeq] = useState("");
   const [language, setLanguage] = useState("he");
   const [resettingCounters, setResettingCounters] = useState(false);
+  const [backPinDialog, setBackPinDialog] = useState(false);
+  const [backPinInput, setBackPinInput] = useState("");
+  const [backPinTarget, setBackPinTarget] = useState("");
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
@@ -595,6 +598,22 @@ export default function Console() {
     );
   };
 
+  const requestBackNav = (targetUrl) => {
+    setBackPinTarget(targetUrl);
+    setBackPinInput("");
+    setBackPinDialog(true);
+  };
+
+  const confirmBackNav = () => {
+    if (backPinInput === "9575") {
+      setBackPinDialog(false);
+      window.location.href = backPinTarget;
+    } else {
+      alert(language === "he" ? "סיסמא שגויה" : language === "en" ? "Wrong password" : language === "ar" ? "كلمة المرور خاطئة" : "รหัสผ่านผิด");
+      setBackPinInput("");
+    }
+  };
+
   const selectBranch = (branchId) => {
     window.location.href = createPageUrl("Console") + "?branch_id=" + branchId;
   };
@@ -711,7 +730,7 @@ export default function Console() {
           
           <div className="text-center mt-8">
             <Button
-              onClick={() => window.location.href = createPageUrl("Console")}
+              onClick={() => requestBackNav(createPageUrl("Console"))}
               variant="outline"
               style={{ borderColor: '#41B649', color: '#41B649' }}
             >
@@ -755,7 +774,7 @@ export default function Console() {
               {resettingCounters ? (language === "he" ? "מאפס..." : language === "en" ? "Resetting..." : language === "ar" ? "جاري إعادة التعيين..." : "กำลังรีเซ็ต...") : "🔄"}
             </Button>
             <Button 
-              onClick={() => window.location.href = createPageUrl("Console") + `?branch_id=${branch_id}`}
+              onClick={() => requestBackNav(createPageUrl("Console") + `?branch_id=${branch_id}`)}
               variant="outline"
               size="sm"
             >
@@ -979,6 +998,35 @@ export default function Console() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* PIN Dialog for back navigation */}
+        <Dialog open={backPinDialog} onOpenChange={(open) => { setBackPinDialog(open); setBackPinInput(""); }}>
+          <DialogContent dir={language === "he" || language === "ar" ? "rtl" : "ltr"} className="bg-white max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{language === "he" ? "הזן סיסמא" : language === "en" ? "Enter Password" : language === "ar" ? "أدخل كلمة المرور" : "กรอกรหัสผ่าน"}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="****"
+                value={backPinInput}
+                onChange={(e) => setBackPinInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmBackNav()}
+                className="text-center text-2xl tracking-widest"
+                dir="ltr"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setBackPinDialog(false); setBackPinInput(""); }}>
+                {t.cancel}
+              </Button>
+              <Button onClick={confirmBackNav} className="text-white" style={{ backgroundColor: '#41B649' }}>
+                {language === "he" ? "אישור" : language === "en" ? "Confirm" : language === "ar" ? "تأكيد" : "ยืนยัน"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Transfer Dialog */}
         <Dialog open={transferDialog} onOpenChange={setTransferDialog}>

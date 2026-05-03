@@ -23,6 +23,8 @@ export default function Kiosk() {
   const [joinClub, setJoinClub] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
   const [language, setLanguage] = useState("he");
+  const [backPinDialog, setBackPinDialog] = useState(false);
+  const [backPinInput, setBackPinInput] = useState("");
 
   const urlParams = new URLSearchParams(window.location.search);
   const branch_id = urlParams.get('branch_id');
@@ -512,6 +514,16 @@ export default function Kiosk() {
     }
   };
 
+  const confirmBackNav = () => {
+    if (backPinInput === "9575") {
+      setBackPinDialog(false);
+      window.location.href = createPageUrl("Kiosk");
+    } else {
+      alert(language === "he" ? "סיסמא שגויה" : language === "en" ? "Wrong password" : language === "ar" ? "كلمة المرور خاطئة" : "รหัสผ่านผิด");
+      setBackPinInput("");
+    }
+  };
+
   const selectBranch = (branchId) => {
     window.location.href = createPageUrl("Kiosk") + "?branch_id=" + branchId;
   };
@@ -675,13 +687,42 @@ export default function Kiosk() {
           
           <div className="text-center mt-8">
             <Button
-              onClick={() => window.location.href = createPageUrl("Kiosk")}
+              onClick={() => { setBackPinInput(""); setBackPinDialog(true); }}
               variant="outline"
               style={{ borderColor: '#41B649', color: '#41B649' }}
             >
               {t.backToBranch}
             </Button>
           </div>
+
+          {/* PIN Dialog */}
+          <Dialog open={backPinDialog} onOpenChange={(open) => { setBackPinDialog(open); setBackPinInput(""); }}>
+            <DialogContent dir={language === "he" || language === "ar" ? "rtl" : "ltr"} className="bg-white max-w-sm">
+              <DialogHeader>
+                <DialogTitle>{language === "he" ? "הזן סיסמא" : language === "en" ? "Enter Password" : language === "ar" ? "أدخل كلمة المرور" : "กรอกรหัสผ่าน"}</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <Input
+                  type="password"
+                  placeholder="****"
+                  value={backPinInput}
+                  onChange={(e) => setBackPinInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && confirmBackNav()}
+                  className="text-center text-2xl tracking-widest"
+                  dir="ltr"
+                  autoFocus
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => { setBackPinDialog(false); setBackPinInput(""); }}>
+                  {t.cancel}
+                </Button>
+                <Button onClick={confirmBackNav} className="text-white" style={{ backgroundColor: '#41B649' }}>
+                  {language === "he" ? "אישור" : language === "en" ? "Confirm" : language === "ar" ? "تأكيد" : "ยืนยัน"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     );
