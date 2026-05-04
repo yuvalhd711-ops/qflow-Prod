@@ -12,6 +12,43 @@ import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useBdsSubscription } from "@/components/utils/bdsSync";
 
+function LanguageSelector({ language, setLanguage, languageNames }) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  return (
+    <div className="relative">
+      <Button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="text-white gap-2"
+        style={{ backgroundColor: '#41B649' }}
+      >
+        <Globe className="h-5 w-5" />
+        {languageNames[language]}
+      </Button>
+      
+      {showDropdown && (
+        <div className="absolute top-12 left-0 bg-white rounded-lg shadow-xl border-2 overflow-hidden z-50" style={{ borderColor: '#41B649' }}>
+          {Object.entries(languageNames).map(([code, name]) => (
+            <button
+              key={code}
+              onClick={() => {
+                setLanguage(code);
+                setShowDropdown(false);
+              }}
+              className={`w-full px-6 py-3 text-left hover:bg-gray-50 transition-colors ${
+                language === code ? 'font-bold' : ''
+              }`}
+              style={language === code ? { backgroundColor: '#E6F9EA', color: '#1F5F25' } : {}}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Console() {
   const [user, setUser] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -561,43 +598,6 @@ export default function Console() {
     }
   };
 
-  const LanguageSelector = () => {
-    const [showDropdown, setShowDropdown] = useState(false);
-    
-    return (
-      <div className="relative">
-        <Button
-          onClick={() => setShowDropdown(!showDropdown)}
-          className="text-white gap-2"
-          style={{ backgroundColor: '#41B649' }}
-        >
-          <Globe className="h-5 w-5" />
-          {languageNames[language]}
-        </Button>
-        
-        {showDropdown && (
-          <div className="absolute top-12 left-0 bg-white rounded-lg shadow-xl border-2 overflow-hidden z-50" style={{ borderColor: '#41B649' }}>
-            {Object.entries(languageNames).map(([code, name]) => (
-              <button
-                key={code}
-                onClick={() => {
-                  setLanguage(code);
-                  setShowDropdown(false);
-                }}
-                className={`w-full px-6 py-3 text-left hover:bg-gray-50 transition-colors ${
-                  language === code ? 'font-bold' : ''
-                }`}
-                style={language === code ? { backgroundColor: '#E6F9EA', color: '#1F5F25' } : {}}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const requestBackNav = (targetUrl) => {
     setBackPinTarget(targetUrl);
     setBackPinInput("");
@@ -648,7 +648,7 @@ export default function Console() {
     return (
       <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
         <div className="fixed top-6 left-6 z-50">
-          <LanguageSelector />
+          <LanguageSelector language={language} setLanguage={setLanguage} languageNames={languageNames} />
         </div>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -693,7 +693,7 @@ export default function Console() {
     return (
       <div className="min-h-screen p-8" dir={language === "he" || language === "ar" ? "rtl" : "ltr"} style={{ backgroundColor: '#E6F9EA' }}>
         <div className="fixed top-6 left-6 z-50">
-          <LanguageSelector />
+          <LanguageSelector language={language} setLanguage={setLanguage} languageNames={languageNames} />
         </div>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -763,7 +763,7 @@ export default function Console() {
           </div>
           
           <div className="flex gap-1 flex-wrap">
-            <LanguageSelector />
+            <LanguageSelector language={language} setLanguage={setLanguage} languageNames={languageNames} />
             <Button 
               onClick={resetCounters}
               disabled={resettingCounters}
