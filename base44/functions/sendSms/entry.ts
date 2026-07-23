@@ -42,8 +42,10 @@ Deno.serve(async (req) => {
       Text: messageText
     };
 
-    // Call Linux SMS proxy server — HTTP (not HTTPS), port 2000, path /send-sms, POST only
-    const response = await fetch("http://84.110.65.94:2000/send-sms", {
+    // Call Linux SMS proxy server — HTTP (not HTTPS), port 2000, path /send-sms, POST only.
+    // Use nip.io magic DNS hostname (resolves to 84.110.65.94) instead of raw IP,
+    // because Deno Deploy blocks direct raw-IP requests (Cloudflare 1003).
+    const response = await fetch("http://84.110.65.94.nip.io:2000/send-sms", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
