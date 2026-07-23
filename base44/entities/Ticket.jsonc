@@ -1,0 +1,77 @@
+{
+  "name": "Ticket",
+  "type": "object",
+  "properties": {
+    "branch_id": {
+      "type": "string",
+      "description": "\u05de\u05d6\u05d4\u05d4 \u05d4\u05e1\u05e0\u05d9\u05e3"
+    },
+    "queue_id": {
+      "type": "string",
+      "description": "\u05de\u05d6\u05d4\u05d4 \u05d4\u05ea\u05d5\u05e8"
+    },
+    "ticket_number": {
+      "type": "integer",
+      "description": "\u05de\u05e1\u05e4\u05e8 \u05d4\u05db\u05e8\u05d8\u05d9\u05e1"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "called",
+        "in_service",
+        "served",
+        "cancelled"
+      ],
+      "default": "waiting",
+      "description": "\u05de\u05e6\u05d1 \u05d4\u05db\u05e8\u05d8\u05d9\u05e1"
+    },
+    "called_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u05d6\u05de\u05df \u05e7\u05e8\u05d9\u05d0\u05d4"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u05d6\u05de\u05df \u05e1\u05d9\u05d5\u05dd"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "\u05de\u05e1\u05e4\u05e8 \u05d8\u05dc\u05e4\u05d5\u05df \u05e9\u05dc \u05d4\u05dc\u05e7\u05d5\u05d7 (null \u05d0\u05dd \u05d4\u05d5\u05d3\u05e4\u05e1 \u05e4\u05d9\u05d6\u05d9\u05ea)"
+    },
+    "two_before_sms_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u05d4\u05d0\u05dd \u05e0\u05e9\u05dc\u05d7\u05d4 \u05ea\u05d6\u05db\u05d5\u05e8\u05ea SMS"
+    },
+    "join_club": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u05d4\u05d0\u05dd \u05e8\u05d5\u05e6\u05d4 \u05dc\u05d4\u05e6\u05d8\u05e8\u05e3 \u05dc\u05de\u05d5\u05e2\u05d3\u05d5\u05df"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "kiosk",
+        "qr",
+        "web"
+      ],
+      "default": "kiosk",
+      "description": "\u05de\u05e7\u05d5\u05e8 \u05d9\u05e6\u05d9\u05e8\u05ea \u05d4\u05db\u05e8\u05d8\u05d9\u05e1"
+    },
+    "served_by": {
+      "type": "string",
+      "description": "\u05de\u05d6\u05d4\u05d4 \u05d4\u05e2\u05d5\u05d1\u05d3 \u05e9\u05d8\u05d9\u05e4\u05dc \u05d1\u05db\u05e8\u05d8\u05d9\u05e1 (email)"
+    },
+    "service_time_seconds": {
+      "type": "integer",
+      "description": "\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05e8\u05d5\u05ea \u05d1\u05e9\u05e0\u05d9\u05d5\u05ea"
+    }
+  },
+  "required": [
+    "branch_id",
+    "queue_id",
+    "ticket_number"
+  ]
+}

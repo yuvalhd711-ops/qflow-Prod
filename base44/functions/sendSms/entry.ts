@@ -36,19 +36,17 @@ Deno.serve(async (req) => {
     
     const messageText = messageOverride || defaultMessageText;
 
-    // Build payload for Linux proxy
+    // Build payload for Linux proxy (exactly per proxy spec: Cli + Text only)
     const payload = {
       Cli: normalizedPhone,
-      Text: messageText,
-      MsgId: msgId || `kiosk_${queueName}_${ticketSeq}_${Date.now()}`
+      Text: messageText
     };
 
-    // Call Linux SMS proxy server
+    // Call Linux SMS proxy server — HTTP (not HTTPS), port 2000, path /send-sms, POST only
     const response = await fetch("http://84.110.65.94:2000/send-sms", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
     });
