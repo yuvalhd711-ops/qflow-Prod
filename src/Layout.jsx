@@ -40,6 +40,23 @@ export default function Layout({ children, currentPageName }) {
 
   const checkAccess = async () => {
     try {
+      // Cache the IP access check for the session so we don't re-read
+      // the AllowedIP entity on every page navigation (avoids read-rate limits).
+      const CACHE_KEY = "ip_access_check";
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setClientIP(parsed.clientIP);
+          if (parsed.allowed) {
+            loadUser();
+          } else {
+            setIpBlocked(true);
+          }
+          return;
+        } catch {}
+      }
+
       console.log("[Layout] Fetching client IP...");
       
       // Get client IP from external service
@@ -62,6 +79,7 @@ export default function Layout({ children, currentPageName }) {
       // If no IPs configured, allow access
       if (allowedIPs.length === 0) {
         console.log("[Layout] No IPs configured, allowing access");
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ allowed: true, clientIP }));
         loadUser();
         return;
       }
@@ -72,6 +90,7 @@ export default function Layout({ children, currentPageName }) {
       );
 
       console.log("[Layout] Access allowed:", isAllowed);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ allowed: isAllowed, clientIP }));
 
       if (!isAllowed) {
         console.log("[Layout] Access BLOCKED for IP:", clientIP);
